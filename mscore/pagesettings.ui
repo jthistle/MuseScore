@@ -329,6 +329,20 @@
           </property>
          </widget>
         </item>
+        <item row="1" column="2">
+         <widget class="QToolButton" name="resetOddPageLeftMargin">
+          <property name="toolTip">
+           <string>Reset to default</string>
+          </property>
+          <property name="accessibleName">
+           <string>Reset 'Odd Page Left Margin' value</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../musescore.qrc">
+            <normaloff>:/data/icons/edit-reset.svg</normaloff>:/data/icons/edit-reset.svg</iconset>
+          </property>
+         </widget>
+        </item>
         <item row="1" column="3" colspan="2">
          <widget class="QDoubleSpinBox" name="oddPageRightMargin">
           <property name="sizePolicy">
@@ -381,6 +395,20 @@
           </property>
           <property name="maximum">
            <double>2000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="4">
+         <widget class="QToolButton" name="resetOddPageTopMargin">
+          <property name="toolTip">
+           <string>Reset to default</string>
+          </property>
+          <property name="accessibleName">
+           <string>Reset 'Odd Page Top Margin' value</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../musescore.qrc">
+            <normaloff>:/data/icons/edit-reset.svg</normaloff>:/data/icons/edit-reset.svg</iconset>
           </property>
          </widget>
         </item>

@@ -53,8 +53,10 @@ class PageSettings : public AbstractDialog, private Ui::PageSettingsBase {
 
       void twosidedToggled(bool);
       void otmChanged(double val);
+      void resetOtm();
       void obmChanged(double val);
       void olmChanged(double val);
+      void resetOlm();
       void ormChanged(double val);
       void etmChanged(double val);
       void ebmChanged(double val);

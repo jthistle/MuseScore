@@ -63,9 +63,13 @@ PageSettings::PageSettings(QWidget* parent)
       connect(pageHeight,           SIGNAL(valueChanged(double)), SLOT(pageHeightChanged(double)));
       connect(pageWidth,            SIGNAL(valueChanged(double)), SLOT(pageWidthChanged(double)));
       connect(oddPageTopMargin,     SIGNAL(valueChanged(double)), SLOT(otmChanged(double)));
+      connect(resetOddPageTopMargin,SIGNAL(clicked()),            SLOT(resetOtm()));
       connect(oddPageBottomMargin,  SIGNAL(valueChanged(double)), SLOT(obmChanged(double)));
+      //connect(resetOddPageBottomMargin, SIGNAL(clicked()),            SLOT(resetObm()));
       connect(oddPageLeftMargin,    SIGNAL(valueChanged(double)), SLOT(olmChanged(double)));
+      connect(resetOddPageLeftMargin,   SIGNAL(clicked()),            SLOT(resetOlm()));
       connect(oddPageRightMargin,   SIGNAL(valueChanged(double)), SLOT(ormChanged(double)));
+      //connect(resetOddPageRightMargin,  SIGNAL(clicked()),            SLOT(resetOrm()));
       connect(evenPageTopMargin,    SIGNAL(valueChanged(double)), SLOT(etmChanged(double)));
       connect(evenPageBottomMargin, SIGNAL(valueChanged(double)), SLOT(ebmChanged(double)));
       connect(evenPageRightMargin,  SIGNAL(valueChanged(double)), SLOT(ermChanged(double)));
@@ -367,6 +371,15 @@ void PageSettings::otmChanged(double val)
       }
 
 //---------------------------------------------------------
+//   resetOtm
+//---------------------------------------------------------
+
+void PageSettings::resetOtm()
+      {
+      oddPageTopMargin->setValue(MScore::baseStyle().value(Sid::pageOddTopMargin).toDouble() * INCH);
+      }
+
+//---------------------------------------------------------
 //   olmChanged
 //---------------------------------------------------------
 
@@ -390,6 +403,15 @@ void PageSettings::olmChanged(double val)
       s->style().set(Sid::pagePrintableWidth, s->styleD(Sid::pageWidth) - s->styleD(Sid::pageEvenLeftMargin) - val);
 
       updatePreview(0);
+      }
+
+//---------------------------------------------------------
+//   resetOlm
+//---------------------------------------------------------
+
+void PageSettings::resetOlm()
+      {
+      oddPageTopMargin->setValue(MScore::baseStyle().value(Sid::pageOddLeftMargin).toDouble() * INCH);
       }
 
 //---------------------------------------------------------
@@ -522,6 +544,7 @@ void PageSettings::pageOffsetChanged(int val)
 
 void PageSettings::pageHeightChanged(double val)
       {
+      qDebug("height changed called");
       double val2 = pageWidth->value();
       if (mmUnit) {
             val /= INCH;
