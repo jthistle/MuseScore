@@ -157,6 +157,10 @@ void EditStaff::updateStaffType()
       showTimesig->setChecked(staffType->genTimesig());
       showBarlines->setChecked(staffType->showBarlines());
       staffGroupName->setText(qApp->translate("Staff type group name", staffType->groupName()));
+      if (orgStaff) {
+            qDebug("updateLinkedFingerings");
+            orgStaff->updateLinkedFingerings(staffType->showTabFingering());
+            }
       }
 
 //---------------------------------------------------------

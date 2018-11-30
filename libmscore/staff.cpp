@@ -981,6 +981,45 @@ void Staff::staffTypeListChanged(int tick)
       }
 
 //---------------------------------------------------------
+//   updateLinkedFingerings
+//---------------------------------------------------------
+
+void Staff::updateLinkedFingerings(bool val) // TODO
+      {
+      if (!_links)
+            return;
+
+      int staffIdx = idx();
+      for (auto e : *_links) {
+            Staff* staff = toStaff(e);
+            if (staff->primaryStaff()) {
+                  staffIdx = staff->idx();
+                  break;
+                  }
+            }
+      
+      for (Segment* s = score()->firstSegment(SegmentType::All); s; s = s->next1()) {
+            for (Element* e = s->firstElementOfSegment(s, staffIdx); e; e = s->nextElementOfSegment(s, e, staffIdx)) {
+                  if (!e)
+                        continue;
+                  if (!e->isNote())
+                        continue;
+                  Note* n = toNote(e);
+                  for (Element* noteEl : n->el()) {
+                        if (!noteEl->isFingering())
+                              continue;
+
+                        qDebug("found fingering");
+                        Element* fingeringClone = noteEl->clone();
+                        //noteEl->staff()->staffType(noteEl->tick())->setShowTabFingering(val);
+                        score()->undoRemoveElement(noteEl);
+                        score()->undoAddElement(fingeringClone);
+                        }
+                  }
+            }
+      }
+
+//---------------------------------------------------------
 //   setStaffType
 //---------------------------------------------------------
 

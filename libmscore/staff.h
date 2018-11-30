@@ -200,6 +200,7 @@ class Staff final : public ScoreElement {
       StaffType* staffType(int tick);
       StaffType* setStaffType(int tick, const StaffType&);
       void staffTypeListChanged(int tick);
+      void updateLinkedFingerings(bool val);
 
       bool isPitchedStaff(int tick) const;
       bool isTabStaff(int tick) const;

@@ -214,6 +214,7 @@ void EditStaffType::setValues()
                   {
                   upsideDown->setChecked(staffType.upsideDown());
                   showTabFingering->setChecked(staffType.showTabFingering());
+                  qDebug(staffType.showTabFingering() ? "yes, show fingering" : "no show fingering");
                   int idx = fretFontName->findText(staffType.fretFontName(), Qt::MatchFixedString);
                   if (idx == -1)
                         idx = 0;          // if name not found, use first name
