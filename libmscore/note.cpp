@@ -3298,4 +3298,73 @@ void Note::undoUnlink()
             e->undoUnlink();
       }
 
+//void playEvents() 
+
+const NoteEventList Note::playbackPlayEvents() const
+      {
+      qDebug("playback play events (const)");
+
+      // Calculate difficulty score:
+      // 
+      qreal difficultyScore = 0;
+
+      Chord* c = chord();
+      int staffId = staffIdx();
+
+      qreal tempo = score()->tempo(tick());     // tempo in bps
+      int ticksPerSec = (int) tempo*MScore::division
+      qreal len = playTicks()/ticksPerSec;      // time length of note in seconds
+
+      if ()
+
+      
+
+
+      NoteEventList tempPlaybackPlayEvents;
+      for (NoteEvent e : _playEvents) {
+            NoteEvent ne;
+
+
+
+            int randNum = rand() % 14;
+            if (randNum > 10) {
+                  ne.setPitch(e.pitch() + randNum-12);
+            } else {
+                  ne.setPitch(e.pitch());
+            }
+
+            qDebug() << e.ontime();
+            ne.setOntime(e.ontime());
+            ne.setLen(e.len());
+
+            tempPlaybackPlayEvents.push_back(ne);
+            }
+      return tempPlaybackPlayEvents;
+
+      if (!_playbackPlayEvents.isEmpty())
+            return _playbackPlayEvents;
+      else {
+            qDebug("not set!");
+            return _playEvents;
+            }
+      }
+
+NoteEventList& Note::playbackPlayEvents() 
+      {
+      qDebug("playback play events");
+      return _playEvents;
+
+      _playbackPlayEvents.clear();
+      for (NoteEvent e : _playEvents) {
+            NoteEvent ne;
+            qDebug() << e.pitch();
+            ne.setPitch(e.pitch()); // + (rand() % 20 - 10));
+            ne.setOntime(e.ontime());
+            ne.setLen(e.len());
+
+            _playbackPlayEvents.push_back(ne);
+            }
+      return _playbackPlayEvents;
+      }
+
 }

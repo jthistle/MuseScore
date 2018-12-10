@@ -250,6 +250,7 @@ class Note final : public Element {
       ElementList _el;        ///< fingering, other text, symbols or images
       QVector<NoteDot*> _dots;
       NoteEventList _playEvents;
+      NoteEventList _playbackPlayEvents;
       QVector<Spanner*> _spannerFor;
       QVector<Spanner*> _spannerBack;
 
@@ -433,6 +434,8 @@ class Note final : public Element {
       void setNval(const NoteVal&, int tick = -1);
       NoteEventList& playEvents()                { return _playEvents; }
       const NoteEventList& playEvents() const    { return _playEvents; }
+      NoteEventList& playbackPlayEvents();
+      const NoteEventList playbackPlayEvents() const;
       NoteEvent* noteEvent(int idx)              { return &_playEvents[idx]; }
       void setPlayEvents(const NoteEventList& l) { _playEvents = l;    }
 

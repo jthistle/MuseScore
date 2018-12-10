@@ -276,9 +276,9 @@ void ChordView::setChord(Chord* c)
       foreach(Note* note, c->notes()) {
             if (note->selected() && _curNote == 0)
                   _curNote = note;
-            int n = note->playEvents().size();
+            int n = note->playEvents().size();  // NOTE:JT maybe playbackPlayEvents?
             for (int i = 0; i < n; ++i) {
-                  NoteEvent* e = &note->playEvents()[i];
+                  NoteEvent* e = &note->playEvents()[i];   // NOTE:JT maybe playbackPlayEvents?
                   ChordItem* item = new ChordItem(this, note, e);
                   if (_curNote == note && curEvent == 0)
                         curEvent = item;

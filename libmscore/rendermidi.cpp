@@ -257,7 +257,7 @@ static void collectNote(EventMap* events, int channel, const Note* note, int vel
             if (note->tieFor()) {
                   Note* n = note->tieFor()->endNote();
                   while (n) {
-                        NoteEventList nel = n->playEvents();
+                        NoteEventList nel = n->playbackPlayEvents();
                         if (nel.size() == 1) {
                               // add value of this note to main note
                               // if we wish to suppress first note of ornament,
@@ -281,7 +281,7 @@ static void collectNote(EventMap* events, int channel, const Note* note, int vel
       bool tieFor = note->tieFor();
       bool tieBack = note->tieBack();
 
-      NoteEventList nel = note->playEvents();
+      NoteEventList nel = note->playbackPlayEvents();
       int nels = nel.size();
       for (int i = 0, pitch = note->ppitch(); i < nels; ++i) {
             const NoteEvent& e = nel[i]; // we make an explicit const ref, not a const copy.  no need to copy as we won't change the original object.
@@ -1585,7 +1585,7 @@ static bool shouldRenderNote(Note* n)
       while (n->tieBack()) {
             n = n->tieBack()->startNote();
             ++dist;
-            if (n && n->playEvents().offtime() > (dist * NoteEvent::NOTE_LENGTH)) {
+            if (n && n->playbackPlayEvents().offtime() > (dist * NoteEvent::NOTE_LENGTH)) {
                   // The previous tied note probably has events for this note too.
                   // That is, we don't need to render this note separately.
                   return false;
