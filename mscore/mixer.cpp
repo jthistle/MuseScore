@@ -49,7 +49,6 @@ namespace Ms {
       __x->setChecked(__y); \
       __x->blockSignals(false);
 
-
 double volumeToUserRange(char v) { return v * 100.0 / 128.0; }
 double panToUserRange(char v) { return (v / 128.0) * 360.0; }
 double chorusToUserRange(char v) { return v * 100.0 / 128.0; }
@@ -119,6 +118,7 @@ Mixer::Mixer(QWidget* parent)
       connect(synti, SIGNAL(gainChanged(float)), SLOT(synthGainChanged(float)));
       connect(tracks_scrollArea->horizontalScrollBar(), SIGNAL(rangeChanged(int, int)), SLOT(adjustScrollPosition(int, int)));
       connect(tracks_scrollArea->horizontalScrollBar(), SIGNAL(valueChanged(int)), SLOT(checkKeptScrollValue(int)));
+//      connect(vel2vol,  SIGNAL(valueChanged(double)), SLOT(vel2volChanged(double)));
 
       enablePlay = new EnablePlayForWidget(this);
       readSettings();
@@ -275,6 +275,22 @@ void Mixer::changeEvent(QEvent *event)
 PartEdit* Mixer::getPartAtIndex(int)
       {
       return 0;
+      }
+
+//---------------------------------------------------------
+//   vel2volChanged
+//---------------------------------------------------------
+
+void Mixer::vel2volChanged(double val)
+      {
+      int iv = lrint(val);
+      qDebug("vel2vol %d", iv);
+      // NOTE:JT fix this
+      /*seq->setController(channel->channel, CTRL_VEL2VOL, iv);
+      seq->setController(channel->channel, CTRL_VEL2VOL, iv);
+      channel->vel2vol = iv;
+      channel->updateInitList();*/
+      updateTracks();
       }
 
 //---------------------------------------------------------

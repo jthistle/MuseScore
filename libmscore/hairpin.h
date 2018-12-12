@@ -78,6 +78,8 @@ class Hairpin final : public TextLineBase {
       bool  _hairpinCircledTip;
       Dynamic::Range _dynRange;
 
+      bool _singleNoteCrescendo;
+
       Spatium _hairpinHeight;
       Spatium _hairpinContHeight;
 
@@ -100,6 +102,10 @@ class Hairpin final : public TextLineBase {
 
       int veloChange() const                    { return _veloChange; }
       void setVeloChange(int v)                 { _veloChange = v;    }
+
+      bool singleNoteCrescendo() const           { return _singleNoteCrescendo; }
+      void setSingleNoteCrescendo(bool val)      { _singleNoteCrescendo = val; }
+      bool getDefaultSingleNote() const         { return true; }
 
       Dynamic::Range dynRange() const           { return _dynRange; }
       void setDynRange(Dynamic::Range t)        { _dynRange = t;    }

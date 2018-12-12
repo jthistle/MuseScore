@@ -269,22 +269,32 @@
        </widget>
       </item>
       <item row="0" column="2">
-       <widget class="Ms::ResetButton" name="resetHairpinCircledTip"/>
+       <widget class="Ms::ResetButton" name="resetHairpinCircledTip" native="true"/>
       </item>
       <item row="2" column="2">
-       <widget class="Ms::ResetButton" name="resetPlacement"/>
+       <widget class="Ms::ResetButton" name="resetPlacement" native="true"/>
       </item>
       <item row="3" column="2">
-       <widget class="Ms::ResetButton" name="resetDynRange"/>
+       <widget class="Ms::ResetButton" name="resetDynRange" native="true"/>
       </item>
       <item row="4" column="2">
-       <widget class="Ms::ResetButton" name="resetVeloChange"/>
+       <widget class="Ms::ResetButton" name="resetVeloChange" native="true"/>
       </item>
       <item row="5" column="2">
-       <widget class="Ms::ResetButton" name="resetHairpinHeight"/>
+       <widget class="Ms::ResetButton" name="resetHairpinHeight" native="true"/>
       </item>
       <item row="6" column="2">
-       <widget class="Ms::ResetButton" name="resetHairpinContHeight"/>
+       <widget class="Ms::ResetButton" name="resetHairpinContHeight" native="true"/>
+      </item>
+      <item row="7" column="2">
+       <widget class="Ms::ResetButton" name="resetHairpinSingleNote" native="true"/>
+      </item>
+      <item row="7" column="0" colspan="2">
+       <widget class="QCheckBox" name="hairpinSingleNote">
+        <property name="text">
+         <string>Single note crescendo</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -309,8 +319,6 @@
   <tabstop>hairpinHeight</tabstop>
   <tabstop>hairpinContHeight</tabstop>
  </tabstops>
- <resources>
-  <include location="../musescore.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

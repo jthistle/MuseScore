@@ -51,6 +51,7 @@
 #include "undo.h"
 #include "utils.h"
 #include "sym.h"
+#include "element.h"
 
 namespace Ms {
 
@@ -404,10 +405,11 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
 
       for (Segment* seg = m->first(st); seg; seg = seg->next(st)) {
             int tick = seg->tick();
+            int tick2 = seg->tick() + seg->ticks() - 1;
             for (int track = strack; track < etrack; ++track) {
                   // skip linked staves, except primary
                   if (!m->score()->staff(track / VOICES)->primaryStaff()) {
-                        track += VOICES-1;
+                        track += VOICES - 1;
                         continue;
                         }
                   Element* cr = seg->element(track);
@@ -415,29 +417,105 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                         continue;
 
                   Chord* chord = toChord(cr);
-                  Staff* st1   = chord->staff();
+                  Staff* st1 = chord->staff();
                   int staffIdx = st1->idx();
-                  int velocity = st1->velocities().velo(seg->tick());
+
+                  int velocity1 = st1->velocities().velo(seg->tick());
+                  int velocity2 = st1->velocities().velo(seg->tick()+seg->ticks()-1);
+                  int velocity = velocity1;
+
+                  /*if (velocity1<velocity2)
+                        velocity=velocity2;*/
+
                   Instrument* instr = chord->part()->instrument(tick);
                   int channel = instr->channel(chord->upNote()->subchannel())->channel();
                   events->registerChannel(channel);
 
                   for (Articulation* a : chord->articulations())
-                        instr->updateVelocity(&velocity,channel, a->articulationName());
+                        instr->updateVelocity(&velocity, channel, a->articulationName());
 
-                  if ( !graceNotesMerged(chord))
-                      for (Chord* c : chord->graceNotesBefore())
-                          for (const Note* note : c->notes())
-                              collectNote(events, channel, note, velocity, tickOffset, staffIdx);
+                  velocity1 = velocity;
+
+                  // velocity=127;
+                  int tick2 = seg->tick()+seg->ticks()-1;
+
+                  bool singleNoteCrescendo = false;
+                  for (auto it : staff->score()->spannerMap().findOverlapping(tick, tick2)) {
+                        Spanner *s = it.value;
+                        if (it.stop == tick)
+                              continue;
+                        if (s->isHairpin() && s->staff() == chord->staff()) {
+                              Hairpin* h = toHairpin(s);
+                              singleNoteCrescendo = h->singleNoteCrescendo();
+                              break;
+                              }
+                        }
+
+                  if (singleNoteCrescendo && instr->useExpression()) {
+                        int velocityEnd = staff->velocities().velo(tick2);
+                        for (Articulation* a : chord->articulations())
+                              instr->updateVelocity(&velocityEnd, channel, a->subtypeName());
+
+                        int cc11Ticks = seg->ticks();
+                        int cc11Value;
+                        int cc11Amount;
+                        if (velocity < velocityEnd) {
+                              cc11Value = (int)(((float)velocity/(float)velocityEnd)*127.0f); // velocity
+                              cc11Amount = 127-cc11Value; // velocityEnd-velocity;
+                              }
+                        else {
+                              cc11Value = 127;
+                              cc11Amount = 127-(int)(((float)velocityEnd/(float)velocity)*127.0f);
+                              }
+
+                        qDebug() << "velocity - end: " << velocity << " - " << velocityEnd;
+                        qDebug() << "val - amount: " << cc11Value << " - " << cc11Amount;
+
+                        int tickInc;
+                        // Do a update for every single little step - maybe that is a bit too much
+                        // TODO find out good update intervals!
+                        if (cc11Amount != 0)
+                              tickInc = cc11Ticks/abs(cc11Amount);
+                        else
+                              tickInc = 0;
+
+                        for (int i=0; i < abs(cc11Amount) ;++i) {
+                              // NOTE:JT revert CTRL_VEL2VOL to CTRL_EXPRESSION ?
+                              NPlayEvent cc11event = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, abs(cc11Value));
+                              events->insert(std::pair<int, NPlayEvent>(seg->tick()+i*tickInc,cc11event));
+                              qDebug() << "added cc11 event val: " << cc11Value << " at tick " << seg->tick()+i*tickInc;
+                              if (velocity < velocityEnd)
+                                    cc11Value++;
+                              else
+                                    cc11Value--;
+                              }
+
+                        qDebug() << "added final play event";
+                        NPlayEvent cc11lastevent = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, 127);
+                        events->insert(std::pair<int,NPlayEvent>(tick2+1,cc11lastevent));
+
+                        if (velocity < velocityEnd)
+                              velocity = velocityEnd;
+                        }
+                  else if (instr->useExpression()) {
+                        NPlayEvent cc11event = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, velocity);
+                        events->insert(std::pair<int, NPlayEvent>(seg->tick(), cc11event));
+                        }
+
+                  /*if (instr->fixedVelocity() > 0)
+                        velocity = instr->fixedVelocity();*/
+
+                  if (!graceNotesMerged(chord)) {
+                        for (Chord* c : chord->graceNotesBefore()) {
+                              for (const Note* note : c->notes()) {
+                                    collectNote(events, channel, note, velocity, tickOffset, staffIdx);
+                                    } 
+                              }
+                        }
 
                   for (const Note* note : chord->notes())
                         collectNote(events, channel, note, velocity, tickOffset, staffIdx);
-
-                  if ( !graceNotesMerged(chord))
-                      for (Chord* c : chord->graceNotesAfter())
-                          for (const Note* note : c->notes())
-                              collectNote(events, channel, note, velocity, tickOffset, staffIdx);
-                 }
+                  }
             }
 
       //
@@ -660,7 +738,7 @@ void Score::updateVelo()
                   }
             for (const auto& sp : _spanner.map()) {
                   Spanner* s = sp.second;
-                  if (s->type() != ElementType::HAIRPIN || sp.second->staffIdx() != staffIdx)
+                  if (!s->isHairpin() || sp.second->staffIdx() != staffIdx)
                         continue;
                   Hairpin* h = toHairpin(s);
                   updateHairpin(h);

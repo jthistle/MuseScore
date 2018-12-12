@@ -145,6 +145,7 @@ static constexpr PropertyMetaData propertyList[] = {
       { Pid::HAIRPIN_TYPE,            "hairpin_type",            true,  "",                      P_TYPE::INT,                 DUMMY_QT_TRANSLATE_NOOP("propertyName", "hairpin type")     },
       { Pid::HAIRPIN_HEIGHT,          "hairpin_height",          false, "hairpinHeight",         P_TYPE::SPATIUM,             DUMMY_QT_TRANSLATE_NOOP("propertyName", "hairpin height")   },
       { Pid::HAIRPIN_CONT_HEIGHT,     "hairpin_cont_height",     false, "hairpinContHeight",     P_TYPE::SPATIUM,             DUMMY_QT_TRANSLATE_NOOP("propertyName", "hairpin cont height") },
+      { Pid::HAIRPIN_SINGLENOTE,      "hairpin_singlenote",      false, "hairpinSinglenote",     P_TYPE::BOOL,                DUMMY_QT_TRANSLATE_NOOP("propertyName", "hairpin single note") },
       { Pid::VELO_CHANGE,             "velo_change",             true,  "veloChange",            P_TYPE::INT,                 DUMMY_QT_TRANSLATE_NOOP("propertyName", "velocity change")  },
       { Pid::DYNAMIC_RANGE,           "dynamic_range",           true,  "dynType",               P_TYPE::INT,                 DUMMY_QT_TRANSLATE_NOOP("propertyName", "dynamic range")    },
       { Pid::PLACEMENT,               "placement",               false, "placement",             P_TYPE::PLACEMENT,           DUMMY_QT_TRANSLATE_NOOP("propertyName", "placement")        },

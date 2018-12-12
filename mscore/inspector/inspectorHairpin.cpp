@@ -16,7 +16,7 @@
 #include "musescore.h"
 #include "libmscore/hairpin.h"
 #include "libmscore/score.h"
-// #include "icons.h"
+#include "libmscore/part.h"
 
 namespace Ms {
 
@@ -43,6 +43,7 @@ InspectorHairpin::InspectorHairpin(QWidget* parent)
             { Pid::DYNAMIC_RANGE,        0, h.dynRange,            h.resetDynRange          },
             { Pid::VELO_CHANGE,          0, h.veloChange,          h.resetVeloChange        },
             { Pid::HAIRPIN_HEIGHT,       0, h.hairpinHeight,       h.resetHairpinHeight     },
+            { Pid::HAIRPIN_SINGLENOTE,   0, h.hairpinSingleNote,   h.resetHairpinSingleNote },
             { Pid::HAIRPIN_CONT_HEIGHT,  0, h.hairpinContHeight,   h.resetHairpinContHeight },
             };
       const std::vector<InspectorPanel> ppList = {

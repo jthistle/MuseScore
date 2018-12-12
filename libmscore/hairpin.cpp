@@ -22,6 +22,7 @@
 #include "staff.h"
 #include "mscore.h"
 #include "chord.h"
+#include "part.h"
 
 namespace Ms {
 
@@ -383,6 +384,7 @@ Element* HairpinSegment::propertyDelegate(Pid pid)
          || pid == Pid::DYNAMIC_RANGE
          || pid == Pid::BEGIN_TEXT
          || pid == Pid::END_TEXT
+         || pid == Pid::HAIRPIN_SINGLENOTE
             )
             return spanner();
       return TextLineBaseSegment::propertyDelegate(pid);
@@ -419,10 +421,12 @@ Hairpin::Hairpin(Score* s)
       resetProperty(Pid::CONTINUE_TEXT_PLACE);
       resetProperty(Pid::HAIRPIN_TYPE);
       resetProperty(Pid::LINE_VISIBLE);
+      resetProperty(Pid::HAIRPIN_SINGLENOTE);
 
       _hairpinCircledTip     = false;
       _veloChange            = 0;
       _dynRange              = Dynamic::Range::PART;
+      _singleNoteCrescendo   = getDefaultSingleNote();
       }
 
 //---------------------------------------------------------
@@ -500,12 +504,14 @@ void Hairpin::write(XmlWriter& xml) const
       writeProperty(xml, Pid::END_TEXT);
       writeProperty(xml, Pid::CONTINUE_TEXT);
       writeProperty(xml, Pid::LINE_VISIBLE);
+      writeProperty(xml, Pid::HAIRPIN_SINGLENOTE);
 
       for (const StyledProperty& spp : *styledProperties()) {
             if (!isStyled(spp.pid))
                   writeProperty(xml, spp.pid);
             }
       SLine::writeProperties(xml);
+
       xml.etag();
       }
 
@@ -536,6 +542,8 @@ void Hairpin::read(XmlReader& e)
                   else if (hairpinType() == HairpinType::DECRESC_HAIRPIN)
                         setHairpinType(HairpinType::DECRESC_LINE);
                   }
+            else if (tag == "hairpinSingleNote")
+                  _singleNoteCrescendo = e.readBool();
             else if (!TextLineBase::readProperties(e))
                   e.unknown();
             }
@@ -560,6 +568,8 @@ QVariant Hairpin::getProperty(Pid id) const
                   return _hairpinHeight;
             case Pid::HAIRPIN_CONT_HEIGHT:
                   return _hairpinContHeight;
+            case Pid::HAIRPIN_SINGLENOTE:
+                  return _singleNoteCrescendo;
             default:
                   return TextLineBase::getProperty(id);
             }
@@ -590,6 +600,9 @@ bool Hairpin::setProperty(Pid id, const QVariant& v)
                   break;
             case Pid::HAIRPIN_CONT_HEIGHT:
                   _hairpinContHeight = v.value<Spatium>();
+                  break;
+            case Pid::HAIRPIN_SINGLENOTE:
+                  _singleNoteCrescendo = v.toBool();
                   break;
             default:
                   return TextLineBase::setProperty(id, v);
@@ -626,14 +639,6 @@ QVariant Hairpin::propertyDefault(Pid id) const
                         return QString("dim.");
                   return QString();
 
-            case Pid::CONTINUE_TEXT:
-            case Pid::END_TEXT:
-                  if (_hairpinType == HairpinType::CRESC_LINE)
-                        return QString("(cresc.)");
-                  if (_hairpinType == HairpinType::CRESC_LINE)
-                        return QString("(dim.)");
-                  return QString("");
-
             case Pid::BEGIN_TEXT_PLACE:
             case Pid::CONTINUE_TEXT_PLACE:
                   return int(PlaceText::LEFT);
@@ -656,6 +661,9 @@ QVariant Hairpin::propertyDefault(Pid id) const
 
             case Pid::HAIRPIN_TYPE:
                   return int(HairpinType::CRESC_HAIRPIN);
+
+            case Pid::HAIRPIN_SINGLENOTE:
+                  return getDefaultSingleNote();
 
             default:
                   return TextLineBase::propertyDefault(id);

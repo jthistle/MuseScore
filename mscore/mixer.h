@@ -53,7 +53,6 @@ char userRangeToChorus(double v);
 //0 to 100
 char userRangeToReverb(double v);
 
-
 //---------------------------------------------------------
 //   Mixer
 //---------------------------------------------------------
@@ -89,6 +88,7 @@ class Mixer : public QWidget, public Ui::Mixer, public MixerTrackGroup
       void midiPrefsChanged(bool showMidiControls);
       void masterVolumeChanged(double val);
       void synthGainChanged(float val);
+      void vel2volChanged(double);
       void adjustScrollPosition(int, int);
       void checkKeptScrollValue(int);
 

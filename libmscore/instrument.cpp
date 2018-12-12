@@ -94,6 +94,9 @@ Instrument::Instrument()
       _maxPitchP   = 127;
       _useDrumset  = false;
       _drumset     = 0;
+
+      _useExpression = true;
+      _fixedVelocity = 0;
       }
 
 Instrument::Instrument(const Instrument& i)
@@ -117,11 +120,13 @@ Instrument::Instrument(const Instrument& i)
       for (Channel* c : i._channel)
             _channel.append(new Channel(*c));
       _clefType     = i._clefType;
+      _fixedVelocity = i._fixedVelocity;
+      _useExpression = i._useExpression;
       }
 
 void Instrument::operator=(const Instrument& i)
       {
-      qDeleteAll(_channel);
+      //qDeleteAll(_channel);
       _channel.clear();
       delete _drumset;
 
@@ -144,6 +149,8 @@ void Instrument::operator=(const Instrument& i)
       for (Channel* c : i._channel)
             _channel.append(new Channel(*c));
       _clefType     = i._clefType;
+      _fixedVelocity = i._fixedVelocity;
+      _useExpression = i._useExpression;
       }
 
 //---------------------------------------------------------
@@ -222,6 +229,10 @@ void Instrument::write(XmlWriter& xml, Part* part) const
             xml.tag("useDrumset", _useDrumset);
             _drumset->save(xml);
             }
+      if (_useExpression)
+            xml.tag("dynamics", "expression");
+      if (_fixedVelocity > 0)
+            xml.tag("fixedVelocity", _fixedVelocity);
       for (int i = 0; i < _clefType.size(); ++i) {
             ClefTypeList ct = _clefType[i];
             if (ct._concertClef == ct._transposingClef) {
@@ -347,6 +358,13 @@ bool Instrument::readProperties(XmlReader& e, Part* part, bool* customDrumset)
             a.read(e);
             _midiActions.append(a);
             }
+      else if (tag == "dynamics") {
+                 QString dynType = e.readXml();
+                 if (dynType == "expression")
+                       _useExpression = true;
+                 else
+                       _useExpression = false;
+            }
       else if (tag == "Articulation") {
             MidiArticulation a;
             a.read(e);
@@ -373,6 +391,8 @@ bool Instrument::readProperties(XmlReader& e, Part* part, bool* customDrumset)
             QString val(e.readElementText());
             setClefType(idx, ClefTypeList(clefType(idx)._concertClef, Clef::clefType(val)));
             }
+      else if (tag == "fixedVelocity")
+            _fixedVelocity = e.readInt();
       else
             return false;
 
@@ -411,12 +431,14 @@ Channel::Channel()
       {
       for(int i = 0; i < int(A::INIT_COUNT); ++i)
             init.push_back(MidiCoreEvent());
+
       _synti    = "Fluid";     // default synthesizer
       _channel  = -1;
       _program  = -1;
       _bank     = 0;
       _volume   = 100;
       _pan      = 64; // actually 63.5 for center
+      _vel2vol  = 127;
       _chorus   = 0;
       _reverb   = 0;
       _color = DEFAULT_COLOR;
@@ -424,13 +446,7 @@ Channel::Channel()
       _mute     = false;
       _solo     = false;
       _soloMute = false;
-
-//      qDebug("construct Channel ");
       }
-
-//---------------------------------------------------------
-//   setVolume
-//---------------------------------------------------------
 
 void Channel::setVolume(char value)
       {
@@ -628,6 +644,8 @@ void Channel::write(XmlWriter& xml, Part* part) const
                         continue;
                   if (e.dataA() == CTRL_CHORUS_SEND && e.dataB() == 0)
                         continue;
+                  if (e.dataA() == CTRL_VEL2VOL && e.dataB() == 127)
+                        continue;
                   }
 
             e.write(xml);
@@ -691,6 +709,9 @@ void Channel::read(XmlReader& e, Part* part)
                               break;
                         case CTRL_REVERB_SEND:
                               _reverb = value;
+                              break;
+                        case CTRL_VEL2VOL:
+                              _vel2vol = value;
                               break;
                         default:
                               {
@@ -782,6 +803,8 @@ void Channel::updateInitList() const
       e.setData(ME_CONTROLLER, CTRL_REVERB_SEND, reverb());
       init[int(A::REVERB)] = e;
 
+      e.setData(ME_CONTROLLER, CTRL_VEL2VOL, _vel2vol);
+      init[int(A::VELOCITY_TO_VOL)] = e;
       }
 
 //---------------------------------------------------------

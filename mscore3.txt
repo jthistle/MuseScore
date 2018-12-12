@@ -302,31 +302,31 @@ Element Interface
 
 Setter/Getter
 
-      virtual QVariant getProperty(P_ID) const;
-      virtual bool setProperty(P_ID, const QVariant&);
+      virtual QVariant getProperty(Pid) const;
+      virtual bool setProperty(Pid, const QVariant&);
 
 Default
 
       A property can have a default value.
 
-      virtual QVariant propertyDefault(P_ID) const;
-      virtual void resetProperty(P_ID id);
+      virtual QVariant propertyDefault(Pid) const;
+      virtual void resetProperty(Pid id);
             Reset property to default value. Also if the property has an associated style value,
             sets the property state to STYLED.
 
 Undo/Redo:
 
-      virtual void undoChangeProperty(P_ID id, const QVariant&, PropertyFlags ps);
-      void undoChangeProperty(P_ID id, const QVariant&);
-      void undoResetProperty(P_ID id);
+      virtual void undoChangeProperty(Pid id, const QVariant&, PropertyFlags ps);
+      void undoChangeProperty(Pid id, const QVariant&);
+      void undoResetProperty(Pid id);
 
-      void undoPushProperty(P_ID);
+      void undoPushProperty(Pid);
 
 Serialization:
 
-      void ScoreElement::writeProperty(XmlWriter& xml, P_ID id) const;
+      void ScoreElement::writeProperty(XmlWriter& xml, Pid id) const;
 
-      bool Element::readProperty(const QStringRef&, XmlReader&, P_ID);
+      bool Element::readProperty(const QStringRef&, XmlReader&, Pid);
             This sets the property state to UNSTYLED if it is a styled property.
 
 Human-readable representation:
@@ -336,17 +336,17 @@ Human-readable representation:
 
 Styled properties:
 
-      virtual StyleIdx getPropertyStyle(P_ID) const;
+      virtual StyleIdx getPropertyStyle(Pid) const;
       virtual void styleChanged();
 
       Helper functions:
-      virtual PropertyFlags& propertyFlags(P_ID);
-      virtual void setPropertyFlags(P_ID, PropertyFlags);
+      virtual PropertyFlags& propertyFlags(Pid);
+      virtual void setPropertyFlags(Pid, PropertyFlags);
 
 Helper functions:
 
       void Element::initSubStyle(SubStyle st)
-      bool Element::custom(P_ID id) const
+      bool Element::custom(Pid id) const
             return true if property is != default value
 
       virtual const StyledProperty* ScoreElement::styledProperties() const;
@@ -371,9 +371,9 @@ Macros:
 
 Functions which must be implemented for any new ScoreElement:
 
-      virtual QVariant getProperty(P_ID propertyId) const override;
-      virtual bool setProperty(P_ID propertyId, const QVariant&) override;
-      virtual QVariant propertyDefault(P_ID) const override;
+      virtual QVariant getProperty(Pid propertyId) const override;
+      virtual bool setProperty(Pid propertyId, const QVariant&) override;
+      virtual QVariant propertyDefault(Pid) const override;
 
 
 ==============================================================
