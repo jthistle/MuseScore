@@ -390,6 +390,15 @@ static void aeolusSetStop(int tick, int channel, int i, int k, bool val, EventMa
 //      events->insert(std::pair<int,NPlayEvent>(tick, event));
       }
 
+static int getTieEndTick(Note* n)
+      {
+      qDebug() << "called";
+      if (n->tieFor())
+            return getTieEndTick(n->tieFor()->endNote());
+      Segment* s = n->chord()->segment();
+      return s->tick()+s->ticks()-1;
+      }
+
 //---------------------------------------------------------
 //   collectMeasureEvents
 //---------------------------------------------------------
@@ -438,6 +447,7 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
 
                   // velocity=127;
                   int tick2 = seg->tick()+seg->ticks()-1;
+                  int hairpinStopTick;
 
                   bool singleNoteCrescendo = false;
                   for (auto it : staff->score()->spannerMap().findOverlapping(tick, tick2)) {
@@ -447,11 +457,27 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                         if (s->isHairpin() && s->staff() == chord->staff()) {
                               Hairpin* h = toHairpin(s);
                               singleNoteCrescendo = h->singleNoteCrescendo();
+                              hairpinStopTick = it.stop;
                               break;
                               }
                         }
 
+                  // NOTE:JT - most work to do is in here
                   if (singleNoteCrescendo && instr->useExpression()) {
+                        for (Note* n : chord->notes()){
+                              qDebug() << "note";
+                              if (n->tieFor()) {
+                                    int lastTick = getTieEndTick(n);
+                                    tick2 = lastTick;
+                                    qDebug() << "Tied forward, lastTick (= tick2) = " << tick2;
+                                    break;
+                                    }
+                              }
+
+                        if (hairpinStopTick < tick2) {
+                              tick2 = hairpinStopTick;
+                              }
+
                         int velocityEnd = staff->velocities().velo(tick2);
                         for (Articulation* a : chord->articulations())
                               instr->updateVelocity(&velocityEnd, channel, a->subtypeName());
@@ -459,13 +485,17 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                         int cc11Ticks = seg->ticks();
                         int cc11Value;
                         int cc11Amount;
+                        //qDebug() << "seg ticks: " << seg->ticks() << ", tick2-seg->tick(): " << (tick2 - seg->tick());
+                        float percentageThrough = (float)seg->ticks()/(float)(tick2 - seg->tick());
+                        qDebug() << "percentage through: " << percentageThrough;
                         if (velocity < velocityEnd) {
                               cc11Value = (int)(((float)velocity/(float)velocityEnd)*127.0f); // velocity
-                              cc11Amount = 127-cc11Value; // velocityEnd-velocity;
+                              cc11Amount = (int)((float)(127-cc11Value)*percentageThrough); // velocityEnd-velocity;
                               }
                         else {
                               cc11Value = 127;
-                              cc11Amount = 127-(int)(((float)velocityEnd/(float)velocity)*127.0f);
+                              // NOTE:JT implement above here as well
+                              cc11Amount = 127-(int)(((float)velocityEnd/(float)velocity)*127.0f*percentageThrough);
                               }
 
                         qDebug() << "velocity - end: " << velocity << " - " << velocityEnd;
@@ -480,25 +510,24 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                               tickInc = 0;
 
                         for (int i=0; i < abs(cc11Amount) ;++i) {
-                              // NOTE:JT revert CTRL_VEL2VOL to CTRL_EXPRESSION ?
                               NPlayEvent cc11event = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, abs(cc11Value));
                               events->insert(std::pair<int, NPlayEvent>(seg->tick()+i*tickInc,cc11event));
-                              qDebug() << "added cc11 event val: " << cc11Value << " at tick " << seg->tick()+i*tickInc;
+                              //qDebug() << "added cc11 event val: " << cc11Value << " at tick " << seg->tick()+i*tickInc;
                               if (velocity < velocityEnd)
                                     cc11Value++;
                               else
                                     cc11Value--;
                               }
 
-                        qDebug() << "added final play event";
+                        /*qDebug() << "added final play event";
                         NPlayEvent cc11lastevent = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, 127);
-                        events->insert(std::pair<int,NPlayEvent>(tick2+1,cc11lastevent));
+                        events->insert(std::pair<int,NPlayEvent>(tick2+1,cc11lastevent));*/
 
                         if (velocity < velocityEnd)
                               velocity = velocityEnd;
                         }
                   else if (instr->useExpression()) {
-                        NPlayEvent cc11event = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, velocity);
+                        NPlayEvent cc11event = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, 127);
                         events->insert(std::pair<int, NPlayEvent>(seg->tick(), cc11event));
                         }
 
@@ -513,8 +542,9 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                               }
                         }
 
-                  for (const Note* note : chord->notes())
+                  for (const Note* note : chord->notes()) {
                         collectNote(events, channel, note, velocity, tickOffset, staffIdx);
+                        }
                   }
             }
 
