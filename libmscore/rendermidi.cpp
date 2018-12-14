@@ -395,8 +395,20 @@ static int getTieEndTick(Note* n)
       qDebug() << "called";
       if (n->tieFor())
             return getTieEndTick(n->tieFor()->endNote());
-      Segment* s = n->chord()->segment();
-      return s->tick()+s->ticks()-1;
+
+      return n->tick()+n->playTicks()-1;
+      }
+
+static int maxVelocityAtTick(int tick, QMap<int,int>velocityMap)
+      {
+      QList<int> velocityMapTicks = velocityMap.keys();
+      std::sort (velocityMapTicks.begin(), velocityMapTicks.end());
+      for (int t : velocityMapTicks) {
+            if (t >= tick)
+                  return velocityMap[t];
+            }
+
+      return 127;   // should never be called
       }
 
 //---------------------------------------------------------
@@ -412,6 +424,82 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
       int strack = firstStaffIdx * VOICES;
       int etrack = nextStaffIdx * VOICES;
 
+      // Max velocity up to a particular tick for a particular staff
+      QMap<int,QMap<int,int>> maxVelocityMap;
+
+      /*for (Staff* st : score()->staves()) {
+            maxVelocityMap[st->idx()] = QMap<int,int>;
+            }*/
+
+      // Loop through segs, and find the min velocity that we can play notes at and still
+      // control them with CC11. The min is limited by the loudest note that is played before there
+      // comes a moment when a note is played in a staff and there isn't a held note behind it.
+      qDebug("STAFF LOOP");
+      for (Staff* st1 : staff->score()->staves()) {
+            if (!st1->primaryStaff())
+                  continue;
+
+            int staffIdx = st1->idx();
+            maxVelocityMap.insert(staffIdx, QMap<int,int>());
+
+            int maxVel = 0;
+            int endTick = 0;
+            for (Segment* seg = m->first(st); seg; seg = seg->next1(st)) {
+                  for (int track = strack; track < etrack; ++track) {
+                        // skip linked staves, except primary
+                        if (!m->score()->staff(track / VOICES)->primaryStaff()) {
+                              track += VOICES - 1;
+                              continue;
+                              }
+                        Element* cr = seg->element(track);
+                        if (cr == 0 || cr->type() != ElementType::CHORD)
+                              continue;
+
+                        Chord* chord = toChord(cr);
+                        Staff* st2 = chord->staff();
+
+                        if (staffIdx != st2->idx())
+                              continue;
+
+                        int startVel = st2->velocities().velo(seg->tick());
+                        int endVel = st2->velocities().velo(seg->tick()+seg->ticks()-1);
+
+                        qDebug() << "startVel - endVel: " << startVel << " - " << endVel;
+
+                        for (Note* n : chord->notes()) {
+                              if (n->tick() > endTick) {
+                                    qDebug("adding %d at %d", maxVel, endTick); 
+                                    maxVelocityMap[staffIdx].insert(endTick, maxVel);
+                                    maxVel = 0;
+                                    }
+
+                              if (startVel > maxVel)
+                                    maxVel = startVel;
+                              if (endVel > maxVel)
+                                    maxVel = endVel;
+
+                              const Note* lastTied = n->lastTiedNote();
+                              if (lastTied != n)
+                                    qDebug("last tied note is not the same");
+                              int noteLastTick = lastTied->tick()+lastTied->playTicks()-1;
+                              if (noteLastTick > endTick) {
+                                    endTick = noteLastTick;
+                                    }
+                              }
+                        }
+                  }
+            
+            maxVelocityMap[staffIdx].insert(staff->score()->endTick(), maxVel);
+            }
+
+      for (int id : maxVelocityMap.keys()) {
+            qDebug("=== Staff %d", id);
+            for (int tick : maxVelocityMap[id].keys()) {
+                  qDebug("maxVel at %d is %d", tick, maxVelocityMap[id][tick]);
+                  }
+            }
+
+      qDebug("SEG LOOP");
       for (Segment* seg = m->first(st); seg; seg = seg->next(st)) {
             int tick = seg->tick();
             int tick2 = seg->tick() + seg->ticks() - 1;
@@ -429,12 +517,7 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                   Staff* st1 = chord->staff();
                   int staffIdx = st1->idx();
 
-                  int velocity1 = st1->velocities().velo(seg->tick());
-                  int velocity2 = st1->velocities().velo(seg->tick()+seg->ticks()-1);
-                  int velocity = velocity1;
-
-                  /*if (velocity1<velocity2)
-                        velocity=velocity2;*/
+                  int velocity = st1->velocities().velo(seg->tick());
 
                   Instrument* instr = chord->part()->instrument(tick);
                   int channel = instr->channel(chord->upNote()->subchannel())->channel();
@@ -443,107 +526,106 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                   for (Articulation* a : chord->articulations())
                         instr->updateVelocity(&velocity, channel, a->articulationName());
 
-                  velocity1 = velocity;
+                  // -------------
+                  int maxVelocity = maxVelocityAtTick(tick, maxVelocityMap[staffIdx]);
+                  qDebug() << "max vel at " << tick << " is " << maxVelocity;
 
-                  // velocity=127;
-                  int tick2 = seg->tick()+seg->ticks()-1;
+                  int hairpinStartTick;
                   int hairpinStopTick;
-
+                  
                   bool singleNoteCrescendo = false;
-                  for (auto it : staff->score()->spannerMap().findOverlapping(tick, tick2)) {
+                  // Check for crescendo crossing at start
+                  for (auto it : staff->score()->spannerMap().findOverlapping(tick, tick+1)) {
                         Spanner *s = it.value;
                         if (it.stop == tick)
                               continue;
-                        if (s->isHairpin() && s->staff() == chord->staff()) {
+                        if (s->isHairpin() && s->staff() == st1) {
                               Hairpin* h = toHairpin(s);
                               singleNoteCrescendo = h->singleNoteCrescendo();
+                              hairpinStartTick = it.start;
                               hairpinStopTick = it.stop;
                               break;
                               }
                         }
 
+
+                  for (auto it : staff->score()->spannerMap().findOverlapping(tick2-1, tick2)) {
+                        Spanner *s = it.value;
+                        if (s->isHairpin() && s->staff() == chord->staff()) {
+                              Hairpin* h = toHairpin(s);
+                              singleNoteCrescendo = h->singleNoteCrescendo();
+                              hairpinStartTick = it.start;
+                              hairpinStopTick = it.stop;
+                              break;
+                              }
+                        }
+
+                  int stick;
+                  int etick;
+                  if (hairpinStartTick && hairpinStopTick) {
+                        stick = hairpinStartTick;
+                        etick = hairpinStopTick;  
+                        }
+                  else {
+                        stick = 0;
+                        etick = seg->tick()+seg->ticks()+1;
+                        }
+
+                  if (stick < seg->tick())
+                        stick = seg->tick();
+                  if (etick > seg->tick()+seg->ticks())
+                        etick = seg->tick()+seg->ticks();
+
+                  qDebug() << "stick: " << stick << "etick: " << etick;
+
+                  int velocityStart = staff->velocities().velo(stick);
+                  int velocityEnd = staff->velocities().velo(etick);
+                  qDebug() << "velocity start - end: " << velocityStart << " - " << velocityEnd;
+
                   // NOTE:JT - most work to do is in here
-                  if (singleNoteCrescendo && instr->useExpression()) {
-                        for (Note* n : chord->notes()){
-                              qDebug() << "note";
-                              if (n->tieFor()) {
-                                    int lastTick = getTieEndTick(n);
-                                    tick2 = lastTick;
-                                    qDebug() << "Tied forward, lastTick (= tick2) = " << tick2;
-                                    break;
-                                    }
-                              }
-
-                        if (hairpinStopTick < tick2) {
-                              tick2 = hairpinStopTick;
-                              }
-
-                        int velocityEnd = staff->velocities().velo(tick2);
+                  if (singleNoteCrescendo && instr->useExpression() && velocityStart != velocityEnd) {
+                        // NOTE:JT - what does this do? Remove it?
                         for (Articulation* a : chord->articulations())
                               instr->updateVelocity(&velocityEnd, channel, a->subtypeName());
 
-                        int cc11Ticks = seg->ticks();
-                        int cc11Value;
-                        int cc11Amount;
-                        //qDebug() << "seg ticks: " << seg->ticks() << ", tick2-seg->tick(): " << (tick2 - seg->tick());
-                        float percentageThrough = (float)seg->ticks()/(float)(tick2 - seg->tick());
-                        qDebug() << "percentage through: " << percentageThrough;
-                        if (velocity < velocityEnd) {
-                              cc11Value = (int)(((float)velocity/(float)velocityEnd)*127.0f); // velocity
-                              cc11Amount = (int)((float)(127-cc11Value)*percentageThrough); // velocityEnd-velocity;
+                        // We need to work out how to express velocity as a CC11 expression
+                        int startExpr = (int)((float)velocityStart/(float)maxVelocity *127.0f);
+                        int endExpr = (int)((float)velocityEnd/(float)maxVelocity *127.0f);
+                        int exprDiff = endExpr-startExpr;
+                        qDebug() << "startExpr, endExpr, diff: " << startExpr << ", " << endExpr << ", " << exprDiff;
+                        // Ticks to change expression over
+                        int exprTicks = etick-stick;
+
+                        // Find out the interval at which to update expression
+                        int tickInc = exprTicks/abs(exprDiff);
+
+                        qDebug() << "tickInc: " << tickInc;
+                        for (int i=stick; i < etick; i+=tickInc) {
+                              int exprVal = startExpr + (int)(exprDiff*((float)(i-stick)/(float)exprTicks));
+                              NPlayEvent cc11event = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, abs(exprVal));
+                              events->insert(std::pair<int, NPlayEvent>(i, cc11event));
+                              qDebug() << "added cc11 event val: " << exprVal << " at tick " << i;
                               }
-                        else {
-                              cc11Value = 127;
-                              // NOTE:JT implement above here as well
-                              cc11Amount = 127-(int)(((float)velocityEnd/(float)velocity)*127.0f*percentageThrough);
-                              }
-
-                        qDebug() << "velocity - end: " << velocity << " - " << velocityEnd;
-                        qDebug() << "val - amount: " << cc11Value << " - " << cc11Amount;
-
-                        int tickInc;
-                        // Do a update for every single little step - maybe that is a bit too much
-                        // TODO find out good update intervals!
-                        if (cc11Amount != 0)
-                              tickInc = cc11Ticks/abs(cc11Amount);
-                        else
-                              tickInc = 0;
-
-                        for (int i=0; i < abs(cc11Amount) ;++i) {
-                              NPlayEvent cc11event = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, abs(cc11Value));
-                              events->insert(std::pair<int, NPlayEvent>(seg->tick()+i*tickInc,cc11event));
-                              //qDebug() << "added cc11 event val: " << cc11Value << " at tick " << seg->tick()+i*tickInc;
-                              if (velocity < velocityEnd)
-                                    cc11Value++;
-                              else
-                                    cc11Value--;
-                              }
-
-                        /*qDebug() << "added final play event";
-                        NPlayEvent cc11lastevent = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, 127);
-                        events->insert(std::pair<int,NPlayEvent>(tick2+1,cc11lastevent));*/
-
-                        if (velocity < velocityEnd)
-                              velocity = velocityEnd;
                         }
                   else if (instr->useExpression()) {
-                        NPlayEvent cc11event = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, 127);
+                        // Add a single expression value to match the velocity, since there is no hairping
+                        int exprVal = (int)((float)staff->velocities().velo(stick)/(float)maxVelocity *127.0f);
+                        qDebug() << "adding static expression " << exprVal << "at " << seg->tick();
+                        NPlayEvent cc11event = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, abs(exprVal));
                         events->insert(std::pair<int, NPlayEvent>(seg->tick(), cc11event));
                         }
-
-                  /*if (instr->fixedVelocity() > 0)
-                        velocity = instr->fixedVelocity();*/
 
                   if (!graceNotesMerged(chord)) {
                         for (Chord* c : chord->graceNotesBefore()) {
                               for (const Note* note : c->notes()) {
-                                    collectNote(events, channel, note, velocity, tickOffset, staffIdx);
+                                    collectNote(events, channel, note, maxVelocity, tickOffset, staffIdx);
                                     } 
                               }
                         }
 
+                  qDebug() << "adding notes at " << seg->tick();
                   for (const Note* note : chord->notes()) {
-                        collectNote(events, channel, note, velocity, tickOffset, staffIdx);
+                        collectNote(events, channel, note, maxVelocity, tickOffset, staffIdx);
                         }
                   }
             }
