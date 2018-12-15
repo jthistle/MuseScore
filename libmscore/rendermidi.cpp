@@ -402,8 +402,6 @@ static void aeolusSetStop(int tick, int channel, int i, int k, bool val, EventMa
 //          0 = both directions
 //          1 = forward
 //          2 = backward
-//
-//    Initial call should be (segment, staff, 0, 0, std::vector<int>, std::vector<int>())
 //---------------------------------------------------------
 
 static int getMaxVelocityForSeg(Segment* s, Staff* st, int maxVelocity, int direction,
@@ -457,7 +455,7 @@ static int getMaxVelocityForSeg(Segment* s, Staff* st, int maxVelocity, int dire
 
       //qDebug("stick %d, actualEtick %d", stick, actualEtick);
       // Check for notes overlapping from other voices.
-      // Only do this if we've come from a measure that wasn't this one.
+      // Only do this if we've come from a measure that we haven't scanned before.
       // Infinite recursion should never happen, I hope.
       if (std::find(scannedMeasures.begin(), scannedMeasures.end(), mtick) == scannedMeasures.end()) {
             //qDebug("doing all seg search");
@@ -516,7 +514,7 @@ static int getMaxVelocityForSeg(Segment* s, Staff* st, int maxVelocity, int dire
 
 static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int tickOffset)
       {
-      //qDebug("\n=== COLLECT MEASURE ===");
+      qDebug("\n=== COLLECT MEASURE ===");
       int firstStaffIdx = staff->idx();
       int nextStaffIdx  = firstStaffIdx + 1;
 
@@ -524,6 +522,7 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
       int strack = firstStaffIdx * VOICES;
       int etrack = nextStaffIdx * VOICES;
 
+      int lastSubchannel = -1;
       for (Segment* seg = m->first(st); seg; seg = seg->next(st)) {
             int tick = seg->tick();
             int tick2 = seg->tick() + seg->ticks() - 1;
@@ -536,6 +535,7 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                   if (!st1->primaryStaff())
                         continue;
                   for (int i=0; i < VOICES; ++i){
+                        qDebug("scanning track %d", st1->idx()*VOICES + i);
                         tracksToScan.push_back(st1->idx()*VOICES + i);
                         }
                   }
@@ -543,29 +543,56 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
             std::vector<int> scannedMeasures;
             std::vector<int> scannedSegs;
             int maxVelocity = getMaxVelocityForSeg(seg, staff, 0, 0, scannedMeasures, scannedSegs, tracksToScan);
-            //qDebug("max vel: %d", maxVelocity);
+            qDebug("max vel: %d", maxVelocity);
+            qDebug("strack, etrack: %d, %d", strack, etrack);
+
             for (int track = strack; track < etrack; ++track) {
                   // skip linked staves, except primary
-                  if (!m->score()->staff(track / VOICES)->primaryStaff()) {
+                  Staff* st1 = m->score()->staff(track / VOICES);
+
+                  if (!st1->primaryStaff()) {
+                        qDebug("continuing, not primary");
                         track += VOICES - 1;
                         continue;
                         }
                   Element* cr = seg->element(track);
-                  if (cr == 0 || !cr->isChord())
-                        continue;
 
-                  Chord* chord = toChord(cr);
-                  Staff* st1 = chord->staff();
+                  Chord* chord;
+                  if (cr != 0){
+                        if (cr->isChord()) {
+                              qDebug("is Chord! ok");
+                              chord = toChord(cr);
+                              }
+                        }
+
+                  if (!chord && !seg->isChordRestType()){
+                        qDebug("not chord rest, continuing (track %d)", track);
+                        continue;
+                        }
+                  qDebug("doing stuff");
+
                   int staffIdx = st1->idx();
 
                   int velocity = st1->velocities().velo(seg->tick());
 
-                  Instrument* instr = chord->part()->instrument(tick);
-                  int channel = instr->channel(chord->upNote()->subchannel())->channel();
-                  events->registerChannel(channel);
+                  Instrument* instr = st1->part()->instrument(tick);
+                  int channel;
+                  if (chord)
+                        lastSubchannel = chord->upNote()->subchannel();
 
-                  for (Articulation* a : chord->articulations())
-                        instr->updateVelocity(&velocity, channel, a->articulationName());
+                  if (lastSubchannel != -1)
+                        channel = instr->channel(lastSubchannel)->channel();
+                  else
+                        continue;
+
+                  qDebug("channel: %d", channel);
+
+                  if (chord) {
+                        events->registerChannel(channel);
+
+                        for (Articulation* a : chord->articulations())
+                              instr->updateVelocity(&velocity, channel, a->articulationName());
+                        }
 
                   // -------------
 
@@ -590,7 +617,7 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
 
                   for (auto it : staff->score()->spannerMap().findOverlapping(tick2-1, tick2)) {
                         Spanner *s = it.value;
-                        if (s->isHairpin() && s->staff() == chord->staff()) {
+                        if (s->isHairpin() && s->staff() == st1) {
                               Hairpin* h = toHairpin(s);
                               singleNoteCrescendo = h->singleNoteCrescendo();
                               hairpinStartTick = it.start;
@@ -615,23 +642,25 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                   if (etick > seg->tick()+seg->ticks())
                         etick = seg->tick()+seg->ticks();
 
-                  //qDebug() << "stick: " << stick << "etick: " << etick;
+                  qDebug() << "stick: " << stick << "etick: " << etick;
 
                   int velocityStart = staff->velocities().velo(stick);
                   int velocityEnd = staff->velocities().velo(etick);
-                  //qDebug() << "velocity start - end: " << velocityStart << " - " << velocityEnd;
+                  qDebug() << "velocity start - end: " << velocityStart << " - " << velocityEnd;
 
                   // NOTE:JT - most work to do is in here
                   if (singleNoteCrescendo && instr->useExpression() && velocityStart != velocityEnd) {
                         // NOTE:JT - what does this do? Remove it?
-                        for (Articulation* a : chord->articulations())
-                              instr->updateVelocity(&velocityEnd, channel, a->subtypeName());
+                        if (chord) {
+                              for (Articulation* a : chord->articulations())
+                                    instr->updateVelocity(&velocityEnd, channel, a->subtypeName());
+                              }
 
                         // We need to work out how to express velocity as a CC11 expression
                         int startExpr = (int)((float)velocityStart/(float)maxVelocity *127.0f);
                         int endExpr = (int)((float)velocityEnd/(float)maxVelocity *127.0f);
                         int exprDiff = endExpr-startExpr;
-                        //qDebug() << "startExpr, endExpr, diff: " << startExpr << ", " << endExpr << ", " << exprDiff;
+                        qDebug() << "startExpr, endExpr, diff: " << startExpr << ", " << endExpr << ", " << exprDiff;
                         // Ticks to change expression over
                         int exprTicks = etick-stick;
 
@@ -654,17 +683,19 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                         events->insert(std::pair<int, NPlayEvent>(seg->tick(), cc11event));
                         }
 
-                  if (!graceNotesMerged(chord)) {
-                        for (Chord* c : chord->graceNotesBefore()) {
-                              for (const Note* note : c->notes()) {
-                                    collectNote(events, channel, note, maxVelocity, tickOffset, staffIdx);
-                                    } 
+                  if (chord) {
+                        if (!graceNotesMerged(chord)) {
+                              for (Chord* c : chord->graceNotesBefore()) {
+                                    for (const Note* note : c->notes()) {
+                                          collectNote(events, channel, note, maxVelocity, tickOffset, staffIdx);
+                                          } 
+                                    }
                               }
-                        }
 
-                  //qDebug() << "adding notes at " << seg->tick();
-                  for (const Note* note : chord->notes()) {
-                        collectNote(events, channel, note, maxVelocity, tickOffset, staffIdx);
+                        //qDebug() << "adding notes at " << seg->tick();
+                        for (const Note* note : chord->notes()) {
+                              collectNote(events, channel, note, maxVelocity, tickOffset, staffIdx);
+                              }
                         }
                   }
             }
