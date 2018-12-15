@@ -390,25 +390,124 @@ static void aeolusSetStop(int tick, int channel, int i, int k, bool val, EventMa
 //      events->insert(std::pair<int,NPlayEvent>(tick, event));
       }
 
-static int getTieEndTick(Note* n)
-      {
-      qDebug() << "called";
-      if (n->tieFor())
-            return getTieEndTick(n->tieFor()->endNote());
+// NOTE:JT - work starts here
 
-      return n->tick()+n->playTicks()-1;
-      }
+//---------------------------------------------------------
+//   getMaxVelocityForSeg
+//    recursively finds the minimum velocity that we can play a note at
+//    in a certain segment. This is achieved by traversing ties, and finding
+//    notes that are held from other voices.
+// 
+//    Direction is 
+//          0 = both directions
+//          1 = forward
+//          2 = backward
+//
+//    Initial call should be (segment, staff, 0, 0, std::vector<int>, std::vector<int>())
+//---------------------------------------------------------
 
-static int maxVelocityAtTick(int tick, QMap<int,int>velocityMap)
+static int getMaxVelocityForSeg(Segment* s, Staff* st, int maxVelocity, int direction,
+      std::vector<int> &scannedMeasures, std::vector<int> &scannedSegs, std::vector<int> &tracks)
       {
-      QList<int> velocityMapTicks = velocityMap.keys();
-      std::sort (velocityMapTicks.begin(), velocityMapTicks.end());
-      for (int t : velocityMapTicks) {
-            if (t >= tick)
-                  return velocityMap[t];
+      //int staffIdx = st->idx();
+      int stick = s->tick();
+      int etick = s->tick() + s->ticks()-1;
+      int actualEtick = etick;
+
+      if (std::find(scannedSegs.begin(), scannedSegs.end(), stick) != scannedSegs.end()) {
+            return maxVelocity;
             }
 
-      return 127;   // should never be called
+      scannedSegs.push_back(stick);
+      
+      if (st->velocities().velo(stick) > maxVelocity) {
+            maxVelocity = st->velocities().velo(stick);
+            }
+
+      Measure* m = s->measure();
+      int mtick = m->tick();
+      SegmentType sType = SegmentType::ChordRest;
+
+      // First, find out the true length of the segment - some voices could extend past the segment.
+      for (int track : tracks) {
+            Element* cr = s->element(track);
+            if (!cr || !cr->isChord())
+                  continue;
+
+            Chord* chord = toChord(cr);
+            for (Note* n : chord->notes()) {
+                  int nEndTick = n->tick()+n->playTicks()-1;
+                  if (nEndTick > actualEtick)
+                        actualEtick = nEndTick;
+
+                  if (st->velocities().velo(nEndTick) > maxVelocity) {
+                        maxVelocity = st->velocities().velo(nEndTick);
+                        //qDebug("new max: %d", maxVelocity);
+                        }
+                  if (n->tieFor() && direction != 2) {
+                        //qDebug("tiefor");
+                        maxVelocity = getMaxVelocityForSeg(n->tieFor()->endNote()->chord()->segment(), st, maxVelocity, 1, scannedMeasures, scannedSegs, tracks);   // recurse
+                        }
+                  if (n->tieBack() && direction != 1) {
+                        //qDebug("tieback");
+                        maxVelocity = getMaxVelocityForSeg(n->tieBack()->startNote()->chord()->segment(), st, maxVelocity, 2, scannedMeasures, scannedSegs, tracks);   // recurse
+                        }
+                  }
+            }
+
+      //qDebug("stick %d, actualEtick %d", stick, actualEtick);
+      // Check for notes overlapping from other voices.
+      // Only do this if we've come from a measure that wasn't this one.
+      // Infinite recursion should never happen, I hope.
+      if (std::find(scannedMeasures.begin(), scannedMeasures.end(), mtick) == scannedMeasures.end()) {
+            //qDebug("doing all seg search");
+            scannedMeasures.push_back(mtick);
+            for (Segment* s1 = m->first(sType); s1; s1 = s1->next(sType)) {
+                  if (s1 == s)
+                        continue;
+
+                  for (int track : tracks) {
+                        Element* cr = s1->element(track);
+                        if (!cr || !cr->isChord())
+                              continue;
+
+                        Chord* chord = toChord(cr);
+                        for (Note* n : chord->notes()) {
+                              int nStartTick = n->tick();
+                              int nEndTick = n->tick()+n->playTicks()-1;
+
+                              //qDebug("note in seg starts at %d, ends %d", nStartTick, nEndTick);
+                              //qDebug("compare to stick, etick: %d, %d", stick, etick);
+
+                              // If note starts after seg starts and ends before seg ends,
+                              // or starts before seg starts and ends after seg ends 
+                              // it could go in either direction
+                              if ((nStartTick >= stick && nEndTick <= actualEtick) ||
+                                    (nStartTick <= stick && nEndTick >= actualEtick)) {
+                                    //qDebug("overlap (enclosed)");
+                                    maxVelocity = getMaxVelocityForSeg(s1, st, maxVelocity, 0, scannedMeasures, scannedSegs, tracks);
+                                    }
+
+
+                              // Check if note overlaps only the start of the seg
+                              // If so, we can go backwards.
+                              else if (nStartTick < stick && nEndTick < actualEtick) {
+                                    //qDebug("overlap (start)");
+                                    maxVelocity = getMaxVelocityForSeg(s1, st, maxVelocity, 2, scannedMeasures, scannedSegs, tracks);
+                                    }
+
+                              // Check if note overlaps only the end of the seg
+                              // If so, we can go forwards.
+                              else if (nStartTick > stick && nEndTick > actualEtick) {
+                                    //qDebug("overlap (end)");
+                                    maxVelocity = getMaxVelocityForSeg(s1, st, maxVelocity, 1, scannedMeasures, scannedSegs, tracks);
+                                    }
+                              }
+                        }
+                  }
+            }
+
+      return maxVelocity;
       }
 
 //---------------------------------------------------------
@@ -417,6 +516,7 @@ static int maxVelocityAtTick(int tick, QMap<int,int>velocityMap)
 
 static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int tickOffset)
       {
+      //qDebug("\n=== COLLECT MEASURE ===");
       int firstStaffIdx = staff->idx();
       int nextStaffIdx  = firstStaffIdx + 1;
 
@@ -424,85 +524,26 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
       int strack = firstStaffIdx * VOICES;
       int etrack = nextStaffIdx * VOICES;
 
-      // Max velocity up to a particular tick for a particular staff
-      QMap<int,QMap<int,int>> maxVelocityMap;
-
-      /*for (Staff* st : score()->staves()) {
-            maxVelocityMap[st->idx()] = QMap<int,int>;
-            }*/
-
-      // Loop through segs, and find the min velocity that we can play notes at and still
-      // control them with CC11. The min is limited by the loudest note that is played before there
-      // comes a moment when a note is played in a staff and there isn't a held note behind it.
-      qDebug("STAFF LOOP");
-      for (Staff* st1 : staff->score()->staves()) {
-            if (!st1->primaryStaff())
-                  continue;
-
-            int staffIdx = st1->idx();
-            maxVelocityMap.insert(staffIdx, QMap<int,int>());
-
-            int maxVel = 0;
-            int endTick = 0;
-            for (Segment* seg = m->first(st); seg; seg = seg->next1(st)) {
-                  for (int track = strack; track < etrack; ++track) {
-                        // skip linked staves, except primary
-                        if (!m->score()->staff(track / VOICES)->primaryStaff()) {
-                              track += VOICES - 1;
-                              continue;
-                              }
-                        Element* cr = seg->element(track);
-                        if (cr == 0 || cr->type() != ElementType::CHORD)
-                              continue;
-
-                        Chord* chord = toChord(cr);
-                        Staff* st2 = chord->staff();
-
-                        if (staffIdx != st2->idx())
-                              continue;
-
-                        int startVel = st2->velocities().velo(seg->tick());
-                        int endVel = st2->velocities().velo(seg->tick()+seg->ticks()-1);
-
-                        qDebug() << "startVel - endVel: " << startVel << " - " << endVel;
-
-                        for (Note* n : chord->notes()) {
-                              if (n->tick() > endTick) {
-                                    qDebug("adding %d at %d", maxVel, endTick); 
-                                    maxVelocityMap[staffIdx].insert(endTick, maxVel);
-                                    maxVel = 0;
-                                    }
-
-                              if (startVel > maxVel)
-                                    maxVel = startVel;
-                              if (endVel > maxVel)
-                                    maxVel = endVel;
-
-                              const Note* lastTied = n->lastTiedNote();
-                              if (lastTied != n)
-                                    qDebug("last tied note is not the same");
-                              int noteLastTick = lastTied->tick()+lastTied->playTicks()-1;
-                              if (noteLastTick > endTick) {
-                                    endTick = noteLastTick;
-                                    }
-                              }
-                        }
-                  }
-            
-            maxVelocityMap[staffIdx].insert(staff->score()->endTick(), maxVel);
-            }
-
-      for (int id : maxVelocityMap.keys()) {
-            qDebug("=== Staff %d", id);
-            for (int tick : maxVelocityMap[id].keys()) {
-                  qDebug("maxVel at %d is %d", tick, maxVelocityMap[id][tick]);
-                  }
-            }
-
-      qDebug("SEG LOOP");
       for (Segment* seg = m->first(st); seg; seg = seg->next(st)) {
             int tick = seg->tick();
             int tick2 = seg->tick() + seg->ticks() - 1;
+
+            // Work out which tracks are affected by the same dynamics
+            Part* p = staff->part();
+            std::vector<int> tracksToScan;
+            QList<Staff*>* staves = p->staves();
+            for (Staff* st1 : *staves){
+                  if (!st1->primaryStaff())
+                        continue;
+                  for (int i=0; i < VOICES; ++i){
+                        tracksToScan.push_back(st1->idx()*VOICES + i);
+                        }
+                  }
+
+            std::vector<int> scannedMeasures;
+            std::vector<int> scannedSegs;
+            int maxVelocity = getMaxVelocityForSeg(seg, staff, 0, 0, scannedMeasures, scannedSegs, tracksToScan);
+            //qDebug("max vel: %d", maxVelocity);
             for (int track = strack; track < etrack; ++track) {
                   // skip linked staves, except primary
                   if (!m->score()->staff(track / VOICES)->primaryStaff()) {
@@ -510,7 +551,7 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                         continue;
                         }
                   Element* cr = seg->element(track);
-                  if (cr == 0 || cr->type() != ElementType::CHORD)
+                  if (cr == 0 || !cr->isChord())
                         continue;
 
                   Chord* chord = toChord(cr);
@@ -527,8 +568,6 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                         instr->updateVelocity(&velocity, channel, a->articulationName());
 
                   // -------------
-                  int maxVelocity = maxVelocityAtTick(tick, maxVelocityMap[staffIdx]);
-                  qDebug() << "max vel at " << tick << " is " << maxVelocity;
 
                   int hairpinStartTick;
                   int hairpinStopTick;
@@ -576,11 +615,11 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                   if (etick > seg->tick()+seg->ticks())
                         etick = seg->tick()+seg->ticks();
 
-                  qDebug() << "stick: " << stick << "etick: " << etick;
+                  //qDebug() << "stick: " << stick << "etick: " << etick;
 
                   int velocityStart = staff->velocities().velo(stick);
                   int velocityEnd = staff->velocities().velo(etick);
-                  qDebug() << "velocity start - end: " << velocityStart << " - " << velocityEnd;
+                  //qDebug() << "velocity start - end: " << velocityStart << " - " << velocityEnd;
 
                   // NOTE:JT - most work to do is in here
                   if (singleNoteCrescendo && instr->useExpression() && velocityStart != velocityEnd) {
@@ -592,25 +631,25 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                         int startExpr = (int)((float)velocityStart/(float)maxVelocity *127.0f);
                         int endExpr = (int)((float)velocityEnd/(float)maxVelocity *127.0f);
                         int exprDiff = endExpr-startExpr;
-                        qDebug() << "startExpr, endExpr, diff: " << startExpr << ", " << endExpr << ", " << exprDiff;
+                        //qDebug() << "startExpr, endExpr, diff: " << startExpr << ", " << endExpr << ", " << exprDiff;
                         // Ticks to change expression over
                         int exprTicks = etick-stick;
 
                         // Find out the interval at which to update expression
                         int tickInc = exprTicks/abs(exprDiff);
 
-                        qDebug() << "tickInc: " << tickInc;
+                        //qDebug() << "tickInc: " << tickInc;
                         for (int i=stick; i < etick; i+=tickInc) {
                               int exprVal = startExpr + (int)(exprDiff*((float)(i-stick)/(float)exprTicks));
                               NPlayEvent cc11event = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, abs(exprVal));
                               events->insert(std::pair<int, NPlayEvent>(i, cc11event));
-                              qDebug() << "added cc11 event val: " << exprVal << " at tick " << i;
+                              //qDebug() << "added cc11 event val: " << exprVal << " at tick " << i;
                               }
                         }
                   else if (instr->useExpression()) {
-                        // Add a single expression value to match the velocity, since there is no hairping
+                        // Add a single expression value to match the velocity, since there is no hairpin
                         int exprVal = (int)((float)staff->velocities().velo(stick)/(float)maxVelocity *127.0f);
-                        qDebug() << "adding static expression " << exprVal << "at " << seg->tick();
+                        //qDebug() << "adding static expression " << exprVal << "at " << seg->tick();
                         NPlayEvent cc11event = NPlayEvent(ME_CONTROLLER, channel, CTRL_EXPRESSION, abs(exprVal));
                         events->insert(std::pair<int, NPlayEvent>(seg->tick(), cc11event));
                         }
@@ -623,7 +662,7 @@ static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int
                               }
                         }
 
-                  qDebug() << "adding notes at " << seg->tick();
+                  //qDebug() << "adding notes at " << seg->tick();
                   for (const Note* note : chord->notes()) {
                         collectNote(events, channel, note, maxVelocity, tickOffset, staffIdx);
                         }
