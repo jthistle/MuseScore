@@ -3713,6 +3713,16 @@ Shortcut Shortcut::_sc[] = {
          0,
          Icons::Invalid_ICON,
          Qt::ApplicationShortcut
+         },
+      {
+         MsWidget::MAIN_WINDOW,
+         STATE_ALL,
+         "toggle-ability-sim",
+         QT_TRANSLATE_NOOP("action","Ability Simulation"),
+         QT_TRANSLATE_NOOP("action","Ability Simulation"),
+         0,
+         Icons::Invalid_ICON,
+         Qt::ApplicationShortcut
          }
 #endif
       };

@@ -103,6 +103,7 @@ class HelpBrowser;
 class ToolbarEditor;
 class TourHandler;
 class GeneralAutoUpdater;
+class AbilitySimulation;
 
 struct PluginDescription;
 enum class SelState : char;
@@ -335,6 +336,8 @@ class MuseScore : public QMainWindow, public MuseScoreCore {
       HelpBrowser* helpBrowser       { 0 };
       QDockWidget* manualDock        { 0 };
 
+      AbilitySimulation* abilitySimulation      { 0 };
+
       PaletteBox* paletteBox         { 0 };
       Inspector* _inspector          { 0 };
       OmrPanel* omrPanel             { 0 };
@@ -474,6 +477,7 @@ class MuseScore : public QMainWindow, public MuseScoreCore {
       virtual void resizeEvent(QResizeEvent*);
       void showModeText(const QString&);
       void addRecentScore(const QString& scorePath);
+      void showAbilitySimulation(bool value);
 
       void updateViewModeCombo();
       void switchLayoutMode(LayoutMode);

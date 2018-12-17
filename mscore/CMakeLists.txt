@@ -53,7 +53,7 @@ QT5_WRAP_UI (ui_headers
       note_groups.ui resourceManager.ui stafftypetemplates.ui
       startcenter.ui scorePreview.ui scoreBrowser.ui
       logindialog.ui uploadscoredialog.ui breaksdialog.ui
-      toolbarEditor.ui workspacedialog.ui
+      toolbarEditor.ui workspacedialog.ui abilitysimulation.ui
 
       importmidi/importmidi_panel.ui
 
@@ -434,6 +434,7 @@ add_executable ( ${ExecutableName}
       preferenceslistwidget.cpp preferenceslistwidget.h
       extension.cpp extension.h
       tourhandler.cpp
+      abilitysimulation.cpp abilitysimulation.h
       script/script.cpp script/scriptentry.cpp script/testscript.cpp script/recorderwidget.cpp
 
       ${COCOABRIDGE}

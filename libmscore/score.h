@@ -1237,6 +1237,8 @@ class MasterScore : public Score {
       void setPrev(MasterScore* s) { _prev = s; }
       void setNext(MasterScore* s) { _next = s; }
 
+      bool _useAbilitySimulation = false;
+
    public:
       MasterScore();
       MasterScore(const MStyle&);
@@ -1330,6 +1332,9 @@ class MasterScore : public Score {
 
       virtual MStyle& style() override                   { return movements()->style();       }
       virtual const MStyle& style() const override       { return movements()->style();       }
+
+      int useAbilitySimulation() const           { return _useAbilitySimulation; }
+      void setUseAbilitySimulation(bool val)     { _useAbilitySimulation = val; }
       };
 
 //---------------------------------------------------------

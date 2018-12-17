@@ -300,6 +300,7 @@ class ScoreView : public QWidget, public MuseScoreView {
       Page* addPage();
       virtual void setScore(Score* s);
       virtual void removeScore()  { _score = 0; }
+      virtual Score* getScore() { return _score; } 
 
       void setMag(qreal m);
       bool navigatorVisible() const;

@@ -3298,55 +3298,161 @@ void Note::undoUnlink()
             e->undoUnlink();
       }
 
+qreal Note::calculateDifficultyScore() const {
+      // Calculate difficulty score:
+      //    Notes that are shorter increase difficulty exponentially
+      //    If it is outside an amateur/prof. range then it becomes more difficult
+      //    If a note is in a measure with a keysig, that increases difficulty,
+      //      depending on the change in signs, unless the note has an accidental.
+      //    
+      qreal difficultyScore = 10.0f;
+
+      int staffId = staffIdx();
+      Staff* st = score()->staff(staffId);
+      int tr = track();
+
+      Chord* c = chord();
+      Segment* s = c->segment();
+      Chord* prevC = 0;
+
+      SegmentType segType = SegmentType::ChordRest;
+      for (Segment* prevS = s->prev1(segType); prevS; prevS = prevS->prev1(segType)) {
+            Element* prevSE = prevS->element(tr);
+            if (prevSE != 0) {
+                  if (prevSE->isRest()) {
+                        break;
+                        }
+                  else if (prevSE->isChord()) {
+                        prevC = toChord(prevSE);
+                        break;
+                        }
+                  }
+            }
+
+      int p = ppitch();
+
+      if (prevC != 0) {
+            Note* prevUpNote = prevC->upNote();
+            int prevPitch = prevUpNote->ppitch();
+
+            qDebug() << "pitches: " << p << ", " << prevPitch;
+            if (prevPitch != p) {
+                  qDebug("different pitch");
+                  // The notes are different, so how quickly they follow each other is taken into
+                  // account. Calculate the actual time length of the note in seconds:
+                  qreal prevTempo = score()->tempo(prevUpNote->tick());     // tempo in bps
+                  int prevTicksPerSec = (int) prevTempo*MScore::division;
+                  qreal prevLen = (double)prevUpNote->playTicks()/(double)prevTicksPerSec;      // time length of previous note in seconds
+                  
+                  // As note length decreases, the difficulty increases
+                  difficultyScore /= prevLen;
+                  qDebug() << "divided by " << prevLen;
+
+                  // Same as above
+                  qreal tempo = score()->tempo(tick());     // tempo in bps
+                  int ticksPerSec = (int) tempo*MScore::division;
+                  qreal len = (double)playTicks()/(double)ticksPerSec;      // time length of note in seconds
+                  difficultyScore /= len;
+                  qDebug() << "divided by " << len;
+
+                  // Multiply the difficulty suitably by the difference in pitch.
+                  // Difference in pitch is proportional to note difficulty.
+                  difficultyScore *= (double)abs(prevPitch-p)/3.0f;
+                  }
+            }
+
+      // If the note is outside the amateur or professional range, this will have
+      // an effect on how difficult the note is.  
+      Instrument* instr = st->part()->instrument(tick());
+      int minP = instr->minPitchA();
+      int maxP = instr->maxPitchA();
+      int minPProf = instr->minPitchP();
+      int maxPProf = instr->maxPitchP();
+
+      if (p < minPProf || p > maxPProf) {
+            difficultyScore *= 4;
+            }
+      else if (p < minP || p > maxP) {
+            difficultyScore *= 2;
+            }
+
+      // If a key change happened recently, take this into account.
+      KeySigEvent lastKeySig = st->keySigEvent(tick());
+      KeySigEvent prevKeySig = st->prevKey(tick());
+      if (prevKeySig.key() != lastKeySig.key() && accidental() == 0) {
+            int lastKeySigTick = st->currentKeyTick(tick());
+            if (tick()-lastKeySigTick < MScore::division*6) {
+                  // Multiply by the difference in flat/sharp signs
+                  difficultyScore *= abs((int)prevKeySig.key()-(int)lastKeySig.key());
+                  qDebug() << "key sig mult: " << abs((int)prevKeySig.key()-(int)lastKeySig.key());
+                  }
+            }
+
+      qDebug() << difficultyScore;
+      return difficultyScore;
+}
 //void playEvents() 
 
 const NoteEventList Note::playbackPlayEvents() const
       {
-      qDebug("playback play events (const)");
+      Part* p = part();
+      MasterScore* ms = score()->masterScore();
+      ms->setUseAbilitySimulation(true);
+      p->setAbilityLevel(AbilityLevel::GOOD);
 
-      // Calculate difficulty score:
-      // 
-      qreal difficultyScore = 0;
-
-      Chord* c = chord();
-      int staffId = staffIdx();
-
-      qreal tempo = score()->tempo(tick());     // tempo in bps
-      int ticksPerSec = (int) tempo*MScore::division
-      qreal len = playTicks()/ticksPerSec;      // time length of note in seconds
-
-      if ()
-
-      
-
+      qreal difficultyScore;
+      bool useAbility = ms->useAbilitySimulation() && p->abilityLevel() != AbilityLevel::PERFECT;
+      if (useAbility)
+            difficultyScore = calculateDifficultyScore();
 
       NoteEventList tempPlaybackPlayEvents;
       for (NoteEvent e : _playEvents) {
             NoteEvent ne;
 
+            int randPitchChange = 0;
+            int ontimeMod = 0;
+            if (useAbility) {
+                  int wrongNoteChance = 0;
 
+                  switch (p->abilityLevel()) {
+                        case AbilityLevel::PROFESSIONAL:
+                              wrongNoteChance = 3000;
+                              break;
+                        case AbilityLevel::GOOD:
+                              wrongNoteChance = 1250;
+                              break;
+                        case AbilityLevel::AVERAGE:
+                              wrongNoteChance = 800;
+                              break;
+                        case AbilityLevel::BAD:
+                              wrongNoteChance = 500;
+                              break;
+                        case AbilityLevel::AWFUL:
+                              wrongNoteChance = 250;
+                              break;
+                        default:
+                              qWarning("Invalid ability level!");
+                              break;
+                        }
 
-            int randNum = rand() % 14;
-            if (randNum > 10) {
-                  ne.setPitch(e.pitch() + randNum-12);
-            } else {
-                  ne.setPitch(e.pitch());
-            }
+                  int randNum = rand() % wrongNoteChance;
+                  if (randNum < (int)difficultyScore) {
+                        int wrongNoteType = rand()%3;
+                        if (wrongNoteType != 1)
+                              randPitchChange = (rand()%2 - 1) ? 1 : -1;
+                        if (wrongNoteType != 2)
+                              ontimeMod = rand()%600 - 150; // more likely to be late than early
+                        }
+                  }
 
-            qDebug() << e.ontime();
-            ne.setOntime(e.ontime());
+            ne.setPitch(e.pitch() + randPitchChange);
+            ne.setOntime(e.ontime() + ontimeMod);
             ne.setLen(e.len());
 
             tempPlaybackPlayEvents.push_back(ne);
             }
-      return tempPlaybackPlayEvents;
 
-      if (!_playbackPlayEvents.isEmpty())
-            return _playbackPlayEvents;
-      else {
-            qDebug("not set!");
-            return _playEvents;
-            }
+      return tempPlaybackPlayEvents;
       }
 
 NoteEventList& Note::playbackPlayEvents() 

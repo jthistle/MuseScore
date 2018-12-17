@@ -250,7 +250,7 @@ class Note final : public Element {
       ElementList _el;        ///< fingering, other text, symbols or images
       QVector<NoteDot*> _dots;
       NoteEventList _playEvents;
-      NoteEventList _playbackPlayEvents;
+      NoteEventList _playbackPlayEvents;  // NOTE:JT remove
       QVector<Spanner*> _spannerFor;
       QVector<Spanner*> _spannerBack;
 
@@ -500,6 +500,8 @@ class Note final : public Element {
       void setOnTimeType(int v)  { _onTimeType = v; }
       int offTimeType() const    { return _offTimeType; }
       int onTimeType() const     { return _onTimeType; }
+
+      qreal calculateDifficultyScore() const;
       };
 
 }     // namespace Ms

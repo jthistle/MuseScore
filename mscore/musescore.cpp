@@ -1400,6 +1400,10 @@ MuseScore::MuseScore()
       a->setCheckable(true);
       menuView->addAction(a);
 
+      a = getAction("toggle-ability-sim");
+      a->setCheckable(true);
+      menuView->addAction(a);
+
       menuView->addSeparator();
       menuView->addAction(getAction("zoomin"));
       menuView->addAction(getAction("zoomout"));
@@ -5486,6 +5490,15 @@ void MuseScore::transpose()
       }
 
 //---------------------------------------------------------
+//   showAbilitySimulation
+//---------------------------------------------------------
+
+void showAbilitySimulation()
+      {
+      return; // NOTE:JT todo
+      }
+
+//---------------------------------------------------------
 //   cmd
 //---------------------------------------------------------
 
@@ -6014,6 +6027,8 @@ void MuseScore::cmd(QAction* a, const QString& cmd)
             reportBug("panel");
       else if (cmd == "leave-feedback")
             leaveFeedback("panel");
+      else if (cmd == "toggle-ability-sim")
+            showAbilitySimulation(a->isChecked());
 #ifndef NDEBUG
       else if (cmd == "no-horizontal-stretch") {
             MScore::noHorizontalStretch = a->isChecked();

@@ -24,6 +24,15 @@ class Staff;
 class Score;
 class InstrumentTemplate;
 
+enum class AbilityLevel {
+      PERFECT,
+      PROFESSIONAL,
+      GOOD,
+      AVERAGE,
+      BAD,
+      AWFUL
+};
+
 //---------------------------------------------------------
 //   @@ Part
 //   @P endTrack        int         (read only)
@@ -50,6 +59,8 @@ class Part final : public ScoreElement {
       QList<Staff*> _staves;
       QString _id;                  ///< used for MusicXml import
       bool _show;                   ///< show part in partitur if true
+
+      AbilityLevel _abilityLevel = AbilityLevel::PERFECT;
 
       static const int DEFAULT_COLOR = 0x3399ff;
       int _color;                   ///User specified color for helping to label parts
@@ -143,6 +154,9 @@ class Part final : public ScoreElement {
       bool hasPitchedStaff();
       bool hasTabStaff();
       bool hasDrumStaff();
+
+      AbilityLevel abilityLevel() const          { return _abilityLevel; }
+      void setAbilityLevel(AbilityLevel level)   { _abilityLevel = level; }
 
       // Allows not reading the same instrument twice on importing 2.X scores.
       // TODO: do we need instruments info in parts at all?
