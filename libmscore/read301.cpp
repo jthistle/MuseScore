@@ -188,6 +188,9 @@ bool Score::read(XmlReader& e)
                   else
                         qDebug("layoutMode: %s", qPrintable(s));
                   }
+            else if (tag == "useAbilitySimulation") {
+                  masterScore()->setUseAbilitySimulation(e.readBool());
+                  }
             else
                   e.unknown();
             }

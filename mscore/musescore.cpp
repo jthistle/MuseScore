@@ -1400,10 +1400,6 @@ MuseScore::MuseScore()
       a->setCheckable(true);
       menuView->addAction(a);
 
-      a = getAction("toggle-ability-sim");
-      a->setCheckable(true);
-      menuView->addAction(a);
-
       menuView->addSeparator();
       menuView->addAction(getAction("zoomin"));
       menuView->addAction(getAction("zoomout"));
@@ -1642,6 +1638,10 @@ MuseScore::MuseScore()
             menuMeasure->addAction(getAction(i));
       menuTools->addMenu(menuMeasure);
       menuTools->addAction(getAction("time-delete"));
+
+      a = getAction("toggle-ability-sim");
+      a->setCheckable(true);
+      menuTools->addAction(a);
 
       menuTools->addSeparator();
 

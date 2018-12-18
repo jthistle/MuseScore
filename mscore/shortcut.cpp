@@ -3716,7 +3716,7 @@ Shortcut Shortcut::_sc[] = {
          },
       {
          MsWidget::MAIN_WINDOW,
-         STATE_ALL,
+         STATE_NORMAL | STATE_NOTE_ENTRY | STATE_EDIT,
          "toggle-ability-sim",
          QT_TRANSLATE_NOOP("action","Ability Simulation"),
          QT_TRANSLATE_NOOP("action","Ability Simulation"),

@@ -145,6 +145,8 @@ bool Part::readProperties(XmlReader& e)
             _partName = e.readElementText();
       else if (tag == "show")
             _show = e.readInt();
+      else if (tag == "abilityLevel")
+            _abilityLevel = (AbilityLevel)e.readInt();
       else
             return false;
       return true;
@@ -179,6 +181,9 @@ void Part::write(XmlWriter& xml) const
       if (_color != DEFAULT_COLOR)
             xml.tag("color", _color);
       instrument()->write(xml, const_cast<Part*>(this)); // Safe, we do not write anything to it
+
+      if (_abilityLevel != AbilityLevel::PERFECT)
+            xml.tag("abilityLevel", (int)_abilityLevel);
       xml.etag();
       }
 

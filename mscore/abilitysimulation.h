@@ -16,12 +16,17 @@ class AbilitySimulation : public QDialog, private Ui::AbilitySimulation{
 
 private slots:
       void useAbilityChanged(bool);
+      void updateAbilityLevel(int);
+      void doApplyToAll();
+      void updatePartDisplay();
 
 public:
       AbilitySimulation(MasterScore* s, QWidget *parent = 0);
 
-      void updateParts();
+      void updatePartsList();
       void updateDisabled();
+
+      void setScore(MasterScore* s)	{ _score = s; }
       };
 
 } // namespace Ms

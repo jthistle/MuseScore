@@ -3305,6 +3305,7 @@ qreal Note::calculateDifficultyScore() const {
       //    If a note is in a measure with a keysig, that increases difficulty,
       //      depending on the change in signs, unless the note has an accidental.
       //    
+      // NOTE:JT - todo calibrate values in this
       qreal difficultyScore = 10.0f;
 
       int staffId = staffIdx();
@@ -3331,6 +3332,25 @@ qreal Note::calculateDifficultyScore() const {
 
       int p = ppitch();
 
+      // Take the length of the note into account. Shorter notes are, in general, more difficult.
+      // Only take it into account if it wasn't preceded by the note that was the same as it.
+      bool observeNoteLength = (prevC == 0 ? true : false);
+
+      if (!observeNoteLength) {
+            Note* prevUpNote = prevC->upNote();
+            int prevPitch = prevUpNote->ppitch();
+            if (prevPitch == p)
+                  observeNoteLength = true;
+            }
+
+      if (observeNoteLength) {
+            qreal tempo = score()->tempo(tick());     // tempo in bps
+            int ticksPerSec = (int) tempo*MScore::division;
+            qreal len = (double)playTicks()/(double)ticksPerSec;      // time length of note in seconds
+            difficultyScore /= pow(len, 1.2);
+            qDebug() << "divided by " << len;
+            }
+
       if (prevC != 0) {
             Note* prevUpNote = prevC->upNote();
             int prevPitch = prevUpNote->ppitch();
@@ -3346,18 +3366,11 @@ qreal Note::calculateDifficultyScore() const {
                   
                   // As note length decreases, the difficulty increases
                   difficultyScore /= prevLen;
-                  qDebug() << "divided by " << prevLen;
-
-                  // Same as above
-                  qreal tempo = score()->tempo(tick());     // tempo in bps
-                  int ticksPerSec = (int) tempo*MScore::division;
-                  qreal len = (double)playTicks()/(double)ticksPerSec;      // time length of note in seconds
-                  difficultyScore /= len;
-                  qDebug() << "divided by " << len;
+                  qDebug() << "divided by " << pow(prevLen, 1.2);
 
                   // Multiply the difficulty suitably by the difference in pitch.
                   // Difference in pitch is proportional to note difficulty.
-                  difficultyScore *= (double)abs(prevPitch-p)/3.0f;
+                  difficultyScore *= (abs(prevPitch-p)+1)/2;
                   }
             }
 
@@ -3391,14 +3404,11 @@ qreal Note::calculateDifficultyScore() const {
       qDebug() << difficultyScore;
       return difficultyScore;
 }
-//void playEvents() 
 
 const NoteEventList Note::playbackPlayEvents() const
       {
       Part* p = part();
       MasterScore* ms = score()->masterScore();
-      ms->setUseAbilitySimulation(true);
-      p->setAbilityLevel(AbilityLevel::GOOD);
 
       qreal difficultyScore;
       bool useAbility = ms->useAbilitySimulation() && p->abilityLevel() != AbilityLevel::PERFECT;
@@ -3419,7 +3429,7 @@ const NoteEventList Note::playbackPlayEvents() const
                               wrongNoteChance = 3000;
                               break;
                         case AbilityLevel::GOOD:
-                              wrongNoteChance = 1250;
+                              wrongNoteChance = 1500;
                               break;
                         case AbilityLevel::AVERAGE:
                               wrongNoteChance = 800;

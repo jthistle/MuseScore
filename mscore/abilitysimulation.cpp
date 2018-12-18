@@ -15,16 +15,22 @@ AbilitySimulation::AbilitySimulation(MasterScore* s, QWidget *parent) : QDialog(
       _score = s;
 
       //connect(this, SIGNAL(accepted()), SLOT(saveValues()));
-      connect(partsList, SIGNAL(itemSelectionChanged()), SLOT(updateDisabled()));
-      connect(useAbilitySimulation, SIGNAL(toggled(bool)), SLOT(useAbilityChanged(bool)));
+      connect(partsList,            SIGNAL(itemSelectionChanged()),     SLOT(updatePartDisplay()));
+      connect(useAbilitySimulation, SIGNAL(toggled(bool)),              SLOT(useAbilityChanged(bool)));
+      connect(abilityLevel,         SIGNAL(currentIndexChanged(int)),   SLOT(updateAbilityLevel(int)));
+      connect(applyToAll,           SIGNAL(clicked()),                    SLOT(doApplyToAll()));
 
-      updateParts();
+      updatePartsList();
       updateDisabled();
 
       MuseScore::restoreGeometry(this);
       }
 
-void AbilitySimulation::updateParts()
+//---------------------------------------------------------
+//   updatePartsList
+//---------------------------------------------------------
+
+void AbilitySimulation::updatePartsList()
       {
       partsList->clear();
       for (Part* p : _score->parts()) {
@@ -32,17 +38,70 @@ void AbilitySimulation::updateParts()
             }
       }
 
+//---------------------------------------------------------
+//   useAbilityChanged
+//---------------------------------------------------------
+
 void AbilitySimulation::useAbilityChanged(bool checked)
       {
-      qDebug() << "chk is " << checked;
       _score->setUseAbilitySimulation(checked);
       updateDisabled();
       }
 
+//---------------------------------------------------------
+//   updateAbilityLevel
+//---------------------------------------------------------
+
+void AbilitySimulation::updateAbilityLevel(int ind)
+      {
+      // If everything is configured correctly, this will work
+      AbilityLevel al = (AbilityLevel)ind;
+
+      int currentPartInd = partsList->row(partsList->currentItem());
+      Part* p = _score->parts()[currentPartInd];
+
+      p->setAbilityLevel(al);
+      updateDisabled();
+      }
+
+//---------------------------------------------------------
+//   doApplyToAll
+//---------------------------------------------------------
+
+void AbilitySimulation::doApplyToAll()
+      {
+      int ind = abilityLevel->currentIndex();
+      AbilityLevel al = (AbilityLevel)ind;
+      for (Part* p : _score->parts()) {
+            p->setAbilityLevel(al);
+            }
+      }
+
+//---------------------------------------------------------
+//   updatePartDisplay
+//---------------------------------------------------------
+
+void AbilitySimulation::updatePartDisplay()
+      {
+      int currentPartInd = partsList->row(partsList->currentItem());
+      Part* p = _score->parts()[currentPartInd];
+
+      int abilityInd = (int)p->abilityLevel();
+
+      abilityLevel->setCurrentIndex(abilityInd);
+      updateDisabled();
+      }
+
+//---------------------------------------------------------
+//   updateDisabled
+//---------------------------------------------------------
+
 void AbilitySimulation::updateDisabled()
       {
-      if (_score->useAbilitySimulation())
+      if (_score->useAbilitySimulation()) {
             useAbilitySimulation->setChecked(true);
+            qDebug("using ability sim");
+            }
       else
             useAbilitySimulation->setChecked(false);
 
@@ -72,6 +131,10 @@ void AbilitySimulation::hideEvent(QHideEvent* event)
       QDialog::hideEvent(event);
       }
 
+//---------------------------------------------------------
+//   showAbilitySimulation
+//---------------------------------------------------------
+
 void MuseScore::showAbilitySimulation(bool value)
       {
       if (abilitySimulation == 0) {
@@ -79,8 +142,9 @@ void MuseScore::showAbilitySimulation(bool value)
             }
 
       if (value) {
+            abilitySimulation->setScore(currentScore()->masterScore());
             abilitySimulation->updateDisabled();
-            abilitySimulation->updateParts();
+            abilitySimulation->updatePartsList();
             abilitySimulation->show();
             abilitySimulation->raise();
             }

@@ -131,6 +131,11 @@ void Score::writeMovement(XmlWriter& xml, bool selectionOnly)
             _audio->write(xml);
             }
 
+      // Only write if different from the default
+      if (isMaster() && masterScore()->useAbilitySimulation()){
+            xml.tag("useAbilitySimulation", true);
+            }
+
       for (int i = 0; i < 32; ++i) {
             if (!_layerTags[i].isEmpty()) {
                   xml.tag(QString("LayerTag id=\"%1\" tag=\"%2\"").arg(i).arg(_layerTags[i]),
