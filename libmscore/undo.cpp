@@ -2365,24 +2365,77 @@ void ChangeGap::flip(EditData*)
 //   FretDot
 //---------------------------------------------------------
 
-void FretDot::flip(EditData*)
+void FretDot::redo(EditData*)
       {
-      int ov = fret->dot(string);
-      fret->setDot(string, dot);
-      dot = ov;
-      fret->triggerLayout();
+      undoData = FretUndoData(diagram);
+      undoData.updateStored();
+
+      diagram->setDot(string, fret, add, dtype);
+      diagram->triggerLayout();
+      }
+
+
+void FretDot::undo(EditData*)
+      {
+      undoData.updateDiagram();
+      diagram->triggerLayout();
       }
 
 //---------------------------------------------------------
 //   FretMarker
 //---------------------------------------------------------
 
-void FretMarker::flip(EditData*)
+void FretMarker::redo(EditData*)
       {
-      int om = fret->marker(string);
-      fret->setMarker(string, marker);
-      marker = om;
-      fret->triggerLayout();
+      undoData = FretUndoData(diagram);
+      undoData.updateStored();
+
+      diagram->setMarker(string, mtype);
+      diagram->triggerLayout();
+      }
+
+void FretMarker::undo(EditData*)
+      {
+      undoData.updateDiagram();
+      diagram->triggerLayout();
+      }
+
+//---------------------------------------------------------
+//   FretBarre
+//---------------------------------------------------------
+
+void FretBarre::redo(EditData*)
+      {
+      undoData = FretUndoData(diagram);
+      undoData.updateStored();
+
+      diagram->setBarre(string, fret, add);
+      diagram->triggerLayout();
+      }
+
+void FretBarre::undo(EditData*)
+      {
+      undoData.updateDiagram();
+      diagram->triggerLayout();
+      }
+
+//---------------------------------------------------------
+//   FretClear
+//---------------------------------------------------------
+
+void FretClear::redo(EditData*)
+      {
+      undoData = FretUndoData(diagram);
+      undoData.updateStored();
+
+      diagram->clear();
+      diagram->triggerLayout();
+      }
+
+void FretClear::undo(EditData*)
+      {
+      undoData.updateDiagram();
+      diagram->triggerLayout();
       }
 
 //---------------------------------------------------------

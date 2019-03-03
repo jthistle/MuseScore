@@ -310,7 +310,7 @@ static const StyleType styleTypes[] {
       { Sid::fretStrings,             "fretStrings",             6 },
       { Sid::fretFrets,               "fretFrets",               5 },
       { Sid::fretOffset,              "fretOffset",              0 },
-      { Sid::fretBarre,               "fretBarre",               0 },
+      { Sid::fretNut,                 "fretNut",                 QVariant(true) },
 
       { Sid::showPageNumber,          "showPageNumber",          QVariant(true) },
       { Sid::showPageNumberOne,       "showPageNumberOne",       QVariant(false) },
