@@ -432,6 +432,17 @@ void FretDiagram::layout()
       y  = -(fretDist * .1 + fm.height());
       h -= y;
 
+      if (_fretOffset > 0) {
+            qreal fretNumMag = score()->styleD(Sid::fretNumMag);
+            scaledFont.setPointSizeF(scaledFont.pointSizeF() * fretNumMag);
+            QFontMetricsF fm2(scaledFont, MScore::paintDevice());
+            qreal numw = fm2.width(QString("%1").arg(_fretOffset+1));
+
+            qreal xdiff = numw + stringDist * .4;
+            w += xdiff;
+            x += _numPos == 0 ? -xdiff : 0;
+            }
+
       bbox().setRect(x, y, w, h);
 
       setPos(-_spatium, -h - styleP(Sid::fretY) + _spatium );
