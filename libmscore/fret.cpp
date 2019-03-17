@@ -1017,6 +1017,23 @@ std::vector<FretItem::Dot> FretDiagram::dot(int s, int f /*= 0*/) const
       }
 
 //---------------------------------------------------------
+//   playedDot 
+//---------------------------------------------------------
+
+FretItem::Dot FretDiagram::playedDot(int s)
+      {
+      FretItem::Dot foundDot = FretItem::Dot(0);
+      if (_dots.find(s) != _dots.end()) {
+            for (auto const& d : _dots.at(s)) {
+                  if (d.fret > foundDot.fret)
+                        foundDot = FretItem::Dot(d);
+                  }
+            }
+
+      return foundDot;
+      }
+
+//---------------------------------------------------------
 //   marker
 //---------------------------------------------------------
 

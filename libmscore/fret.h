@@ -204,6 +204,7 @@ class FretDiagram final : public Element {
       void setShowNut(bool val)   { _showNut = val;     }
 
       std::vector<FretItem::Dot> dot(int s, int f = 0) const;
+      FretItem::Dot playedDot(int s) const;
       FretItem::Marker marker(int s) const;
       FretItem::Barre barre(int fret) const;
 #if 0 // NOTE:JT possible future feature

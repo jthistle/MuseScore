@@ -374,6 +374,30 @@ static void collectNote(EventMap* events, int channel, const Note* note, int vel
       }
 
 //---------------------------------------------------------
+//   collectFretDiagrams
+//---------------------------------------------------------
+
+static void collectFretDiagram(EventMap* events, int channel, FretDiagram* fd, int tickOffset)
+      {
+      Fraction tick = fd->segment()->measure()->tick();
+      Instrument* instr = fd->part()->instrument(tick);
+      StringData* sd = instr->stringData();
+
+      NPlayEvent ev(ME_NOTEON, channel, pitch, velo);
+      ev.setOriginatingStaff(staffIdx);
+      ev.setTuning(note->tuning());
+      ev.setNote(note);
+
+      const Fraction nlen = Fraction(1,2);
+      int onTick = tick.ticks() + tickOffset;
+      int offTick = onTick + nlen.ticks();
+
+      events->insert(std::pair<int, NPlayEvent>(onTick, ev));
+      ev.setVelo(0);
+      events->insert(std::pair<int, NPlayEvent>(offTick, ev));      
+      }
+
+//---------------------------------------------------------
 //   aeolusSetStop
 //---------------------------------------------------------
 
