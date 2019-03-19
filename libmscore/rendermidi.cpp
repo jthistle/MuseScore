@@ -375,6 +375,7 @@ static void collectNote(EventMap* events, int channel, const Note* note, int vel
 
 //---------------------------------------------------------
 //   collectFretDiagrams
+//    TODO!
 //---------------------------------------------------------
 
 static void collectFretDiagram(EventMap* events, int channel, FretDiagram* fd, int tickOffset)
@@ -382,19 +383,28 @@ static void collectFretDiagram(EventMap* events, int channel, FretDiagram* fd, i
       Fraction tick = fd->segment()->measure()->tick();
       Instrument* instr = fd->part()->instrument(tick);
       StringData* sd = instr->stringData();
+      StringData defaultSd = StringData(6, fd->frets(), int { 40, 45, 50, 55, 59, 64 });
 
-      NPlayEvent ev(ME_NOTEON, channel, pitch, velo);
-      ev.setOriginatingStaff(staffIdx);
-      ev.setTuning(note->tuning());
-      ev.setNote(note);
+      if (!sd)
+            sd = &defaultSd;
 
-      const Fraction nlen = Fraction(1,2);
-      int onTick = tick.ticks() + tickOffset;
-      int offTick = onTick + nlen.ticks();
+      const Fraction nlen = Fraction(1,2); // TODO change this?
 
-      events->insert(std::pair<int, NPlayEvent>(onTick, ev));
-      ev.setVelo(0);
-      events->insert(std::pair<int, NPlayEvent>(offTick, ev));      
+      for (instrString s : sd->stringList()) {
+            FretItem::Dot playDot = fd->playedDot(s)
+
+            NPlayEvent ev(ME_NOTEON, channel, pitch, velo);
+            ev.setOriginatingStaff(staffIdx);
+            ev.setTuning(note->tuning());
+            ev.setNote(note);
+
+            int onTick = tick.ticks() + tickOffset;
+            int offTick = onTick + nlen.ticks();
+
+            events->insert(std::pair<int, NPlayEvent>(onTick, ev));
+            ev.setVelo(0);
+            events->insert(std::pair<int, NPlayEvent>(offTick, ev));      
+            }
       }
 
 //---------------------------------------------------------
