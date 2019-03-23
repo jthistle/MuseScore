@@ -13,6 +13,8 @@
 #ifndef __VELO_H__
 #define __VELO_H__
 
+#include "fraction.h"
+
 /**
  \file
  Definition of classes VeloList.
@@ -25,13 +27,24 @@ namespace Ms {
 ///   item in VeloList
 //---------------------------------------------------------
 
-enum class VeloType : char { FIX, RAMP };
+enum class VeloChangeMethod : signed char;
+
+enum class VeloType : signed char {
+      FIXED,
+      RAMP,
+      DYNAMIC     // changing dynamic only
+      };
 
 struct VeloEvent {
       VeloType type;
-      char val;
+      int val;
+      int val2;
+      Fraction duration;
+      VeloChangeMethod method;
       VeloEvent() {}
-      VeloEvent(VeloType t, char v) : type(t), val(v) {}
+      VeloEvent(int v) : val(v) { type = VeloType::FIXED; }
+      VeloEvent(int v1, int v2, Fraction d, VeloChangeMethod m) : val(v1), val2(v2), duration(d), method(m) { type = VeloType::RAMP; }
+      VeloEvent(int v1, int v2, Fraction d) : val(v1), val2(v2), duration(d) { type = VeloType::DYNAMIC; }
       };
 
 //---------------------------------------------------------
@@ -39,13 +52,22 @@ struct VeloEvent {
 ///  List of note velocity changes
 //---------------------------------------------------------
 
-class VeloList : public QMap<int, VeloEvent> {
+class VeloList : public QMap<Fraction, VeloEvent> {
    public:
       VeloList() {}
-      int velo(int tick) const;
-      int nextVelo(int tick) const;
-      void setVelo(int tick, VeloEvent velo);
-      void setVelo(int tick, int velocity);
+      int velo(const Fraction& tick) const;
+      int prevVelo(const Fraction& tick) const;
+      int nextVelo(const Fraction& tick) const;
+      std::vector<Fraction> findOverlapping(Fraction& tick1, Fraction& tick2) const;
+      void setVelo(Fraction tick, VeloEvent velo);
+      void setDynamic(Fraction tick, int velocity);
+      void setDynamic(Fraction tick, Fraction duration, int startVelocity, int endVelocity);
+      void setHairpin(Fraction tick, Fraction duration, VeloChangeMethod method, int startVelocity = -1, int endVelocity = -1);
+
+      void debug() const;
+
+      static int interpolate(Fraction tick, Fraction duration, int startVel, int endVel, VeloChangeMethod changeMethod);
+      static int interpolateDynamic(Fraction tick, Fraction duration, int startVel, int endVel);
       };
 
 

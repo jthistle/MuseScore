@@ -297,12 +297,11 @@ void Volta::setVelocity() const
             if (!endMeasure->repeatEnd())
                   return;
 
-            int startTick  = startMeasure->tick().ticks() - 1;
-            int endTick    = (endMeasure->tick() + endMeasure->ticks()).ticks() - 1;
-            Staff* st      = staff();
-            VeloList& velo = st->velocities();
-            auto prevVelo  = velo.velo(startTick);
-            velo.setVelo(endTick, prevVelo);
+            Fraction startTick  = startMeasure->tick() - Fraction::fromTicks(1);
+            Fraction endTick    = endMeasure->tick() + endMeasure->ticks() - Fraction::fromTicks(1);
+            VeloList& velo = staff()->velocities();
+            int prevVelo  = velo.velo(startTick);
+            velo.setDynamic(endTick, prevVelo);
             }
       }
 
