@@ -644,15 +644,17 @@ void Debugger::updateElement(Element* el)
                   case ElementType::PEDAL:
                   case ElementType::LET_RING:
                   case ElementType::VIBRATO:
+                  case ElementType::TEMPOLINE:
                   case ElementType::TEXTLINE:         ew = new TextLineView;        break;
+                  case ElementType::LET_RING_SEGMENT:
+                  case ElementType::OTTAVA_SEGMENT:
                   case ElementType::PEDAL_SEGMENT:
+                  case ElementType::TEMPOLINE_SEGMENT:
                   case ElementType::TEXTLINE_SEGMENT: ew = new TextLineSegmentView; break;
                   case ElementType::LYRICS:           ew = new LyricsView;          break;
                   case ElementType::BEAM:             ew = new BeamView;            break;
                   case ElementType::TREMOLO:          ew = new TremoloView;         break;
                   case ElementType::OTTAVA:           ew = new OttavaView;          break;
-                  case ElementType::LET_RING_SEGMENT:
-                  case ElementType::OTTAVA_SEGMENT:   ew = new TextLineSegmentView; break;
                   case ElementType::SLUR_SEGMENT:     ew = new SlurSegmentView;     break;
                   case ElementType::TIE_SEGMENT:      ew = new TieSegmentView;     break;
                   case ElementType::ACCIDENTAL:       ew = new AccidentalView;      break;

@@ -3112,7 +3112,8 @@ static void directionTag(XmlWriter& xml, Attributes& attr, Element const* const 
             const Element* pel = 0;
             const LineSegment* seg = 0;
             if (el->type() == ElementType::HAIRPIN || el->type() == ElementType::OTTAVA
-                || el->type() == ElementType::PEDAL || el->type() == ElementType::TEXTLINE) {
+                || el->type() == ElementType::PEDAL || el->type() == ElementType::TEXTLINE
+                || el->type() == ElementType::TEMPOLINE) {
                   // handle elements derived from SLine
                   // find the system containing the first linesegment
                   const SLine* sl = static_cast<const SLine*>(el);
@@ -4569,6 +4570,9 @@ static void spannerStart(ExportMusicXml* exp, int strack, int etrack, int track,
                               case ElementType::TEXTLINE:
                                     exp->textLine(toTextLine(e), sstaff, seg->tick());
                                     break;
+                              case ElementType::TEMPOLINE: // NOTE:JT todo
+                                    //exp->tempoLine(static_cast<const TempoLine*>(e), sstaff, seg->tick());
+                                    break;
                               case ElementType::TRILL:
                                     // ignore (written as <note><notations><ornaments><wavy-line>)
                                     break;
@@ -4616,6 +4620,9 @@ static void spannerStop(ExportMusicXml* exp, int strack, int etrack, const Fract
                               break;
                         case ElementType::TEXTLINE:
                               exp->textLine(toTextLine(e), sstaff, Fraction(-1,1));
+                              break;
+                        case ElementType::TEMPOLINE: // NOTE:JT todo
+                              //exp->tempoLine(static_cast<const TempoLine*>(e), sstaff, Fraction(-1,1));
                               break;
                         case ElementType::TRILL:
                               // ignore (written as <note><notations><ornaments><wavy-line>

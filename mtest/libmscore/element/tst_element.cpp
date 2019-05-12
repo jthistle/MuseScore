@@ -41,6 +41,7 @@ void TestElement::testIds()
             ElementType::VOLTA,
             ElementType::OTTAVA,
             ElementType::TEXTLINE,
+            ElementType::TEMPOLINE,
             ElementType::TRILL,
             ElementType::PEDAL,
             ElementType::HAIRPIN,

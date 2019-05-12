@@ -607,7 +607,7 @@ void Spanner::computeEndElement()
             case Anchor::SEGMENT: {
                   if (track2() == -1)
                         setTrack2(track());
-                  if (ticks().isZero() && isTextLine() && parent())   // special case palette
+                  if (ticks().isZero() && isTextLine() && parent())   // special case palette NOTE:JT may have to update here?
                         setTicks(score()->lastSegment()->tick() - _tick);
 
                   if (isLyricsLine() && toLyricsLine(this)->isEndMelisma()) {

@@ -86,6 +86,7 @@ static const ElementName elementNames[] = {
       { ElementType::VIBRATO_SEGMENT,      "VibratoSegment",       QT_TRANSLATE_NOOP("elementName", "Vibrato Segment") },
       { ElementType::PALM_MUTE_SEGMENT,    "PalmMuteSegment",      QT_TRANSLATE_NOOP("elementName", "Palm Mute Segment") },
       { ElementType::TEXTLINE_SEGMENT,     "TextLineSegment",      QT_TRANSLATE_NOOP("elementName", "Text Line Segment") },
+      { ElementType::TEMPOLINE_SEGMENT,    "TempoLineSegment",     QT_TRANSLATE_NOOP("elementName", "Tempo Line Segment") },
       { ElementType::VOLTA_SEGMENT,        "VoltaSegment",         QT_TRANSLATE_NOOP("elementName", "Volta Segment") },
       { ElementType::PEDAL_SEGMENT,        "PedalSegment",         QT_TRANSLATE_NOOP("elementName", "Pedal Segment") },
       { ElementType::LYRICSLINE_SEGMENT,   "LyricsLineSegment",    QT_TRANSLATE_NOOP("elementName", "Melisma Line Segment") },
@@ -112,6 +113,7 @@ static const ElementName elementNames[] = {
       { ElementType::VIBRATO,              "Vibrato",              QT_TRANSLATE_NOOP("elementName", "Vibrato") },
       { ElementType::PALM_MUTE,            "PalmMute",             QT_TRANSLATE_NOOP("elementName", "Palm Mute") },
       { ElementType::TEXTLINE,             "TextLine",             QT_TRANSLATE_NOOP("elementName", "Text Line") },
+      { ElementType::TEMPOLINE,            "TempoLine",            QT_TRANSLATE_NOOP("elementName", "Tempo Line") },
       { ElementType::TEXTLINE_BASE,        "TextLineBase",         QT_TRANSLATE_NOOP("elementName", "Text Line Base") },  // remove
       { ElementType::NOTELINE,             "NoteLine",             QT_TRANSLATE_NOOP("elementName", "Note Line") },
       { ElementType::LYRICSLINE,           "LyricsLine",           QT_TRANSLATE_NOOP("elementName", "Melisma Line") },
@@ -829,7 +831,7 @@ ElementType ScoreElement::name2type(const QStringRef& s, bool silent)
 bool ScoreElement::isSLineSegment() const
       {
       return isHairpinSegment() || isOttavaSegment() || isPedalSegment()
-         || isTrillSegment() || isVoltaSegment() || isTextLineSegment()
+         || isTrillSegment() || isVoltaSegment() || isTextLineSegment() || isTempoLineSegment()
          || isGlissandoSegment() || isLetRingSegment() || isVibratoSegment() || isPalmMuteSegment();
       }
 

@@ -893,6 +893,7 @@ Enabling copying of more element types requires enabling pasting in Score::paste
                   case ElementType::TRILL_SEGMENT:
                   case ElementType::VIBRATO_SEGMENT:
                   case ElementType::TEXTLINE_SEGMENT:
+                  case ElementType::TEMPOLINE_SEGMENT:
                   case ElementType::VOLTA_SEGMENT:
                   case ElementType::PEDAL_SEGMENT:
                   case ElementType::LAYOUT_BREAK:
@@ -914,6 +915,7 @@ Enabling copying of more element types requires enabling pasting in Score::paste
                   case ElementType::PEDAL:
                   case ElementType::TRILL:
                   case ElementType::TEXTLINE:
+                  case ElementType::TEMPOLINE:
                   case ElementType::NOTELINE:
                   case ElementType::SEGMENT:
                   case ElementType::SYSTEM:
