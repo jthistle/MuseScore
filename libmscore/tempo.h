@@ -36,6 +36,10 @@ struct TEvent {
       TEvent(const TEvent& e);
       TEvent(qreal bps, qreal seconds, TempoType t);
       bool valid() const;
+
+      bool isFix() const     { return type & TempoType::FIX; }
+      bool isRamp() const    { return type & TempoType::RAMP; }
+      bool isPause() const   { return type & TempoType::PAUSE; }
       };
 
 //---------------------------------------------------------
@@ -66,12 +70,14 @@ class TempoMap : public std::map<int, TEvent> {
       int time2tick(qreal time, int tick, int* sn) const;
       int tempoSN() const { return _tempoSN; }
 
-      void setTempo(int t, qreal);
-      void setPause(int t, qreal);
+      void setTempo(int tick, qreal tempo, bool ramp = false);
+      void setPause(int tick, qreal pause);
       void delTempo(int tick);
 
       void setRelTempo(qreal val);
       qreal relTempo() const { return _relTempo; }
+
+      static constexpr qreal DEFAULT_TEMPO { 2.0 };
       };
 
 }     // namespace Ms

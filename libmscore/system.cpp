@@ -873,6 +873,7 @@ void System::add(Element* el)
                   score()->addElement(el);
                   break;
             case ElementType::TEXTLINE_SEGMENT:
+            case ElementType::TEMPOLINE_SEGMENT:
             case ElementType::HAIRPIN_SEGMENT:
             case ElementType::OTTAVA_SEGMENT:
             case ElementType::TRILL_SEGMENT:
@@ -940,6 +941,7 @@ void System::remove(Element* el)
                   score()->removeElement(el);
                   break;
             case ElementType::TEXTLINE_SEGMENT:
+            case ElementType::TEMPOLINE_SEGMENT:
             case ElementType::HAIRPIN_SEGMENT:
             case ElementType::OTTAVA_SEGMENT:
             case ElementType::TRILL_SEGMENT:

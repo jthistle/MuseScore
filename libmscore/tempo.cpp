@@ -53,7 +53,7 @@ bool TEvent::valid() const
 
 TempoMap::TempoMap()
       {
-      _tempo    = 2.0;        // default fixed tempo in beat per second
+      _tempo    = DEFAULT_TEMPO;        // default fixed tempo in beat per second
       _tempoSN  = 1;
       _relTempo = 1.0;
       }
@@ -80,15 +80,16 @@ void TempoMap::setPause(int tick, qreal pause)
 //   setTempo
 //---------------------------------------------------------
 
-void TempoMap::setTempo(int tick, qreal tempo)
+void TempoMap::setTempo(int tick, qreal tempo, bool ramp /*= false*/)
       {
+      TempoType ttype = ramp ? TempoType::RAMP : TempoType::FIX;
       auto e = find(tick);
       if (e != end()) {
             e->second.tempo = tempo;
-            e->second.type |= TempoType::FIX;
+            e->second.type |= ttype;
             }
       else
-            insert(std::pair<const int, TEvent> (tick, TEvent(tempo, 0.0, TempoType::FIX)));
+            insert(std::pair<const int, TEvent> (tick, TEvent(tempo, 0.0, ttype)));
       normalize();
       }
 
@@ -100,7 +101,7 @@ void TempoMap::normalize()
       {
       qreal time  = 0;
       int tick    = 0;
-      qreal tempo = 2.0;
+      qreal tempo = DEFAULT_TEMPO;
       for (auto e = begin(); e != end(); ++e) {
             // entries that represent a pause *only* (not tempo change also)
             // need to be corrected to continue previous tempo
@@ -161,7 +162,7 @@ void TempoMap::clearRange(int tick1, int tick2)
 qreal TempoMap::tempo(int tick) const
       {
       if (empty())
-            return 2.0;
+            return DEFAULT_TEMPO;
       auto i = lower_bound(tick);
       if (i == end()) {
             --i;
@@ -170,8 +171,27 @@ qreal TempoMap::tempo(int tick) const
       if (i->first == tick)
             return i->second.tempo;
       if (i == begin())
-            return 2.0;
+            return DEFAULT_TEMPO;
+
+      // Check if the event after tick is a ramp event
+      bool ramp = false;
+      int  etick = false;
+      qreal finalTempo = -1;
+      if (i->second.isRamp()) {
+            ramp = true;
+            etick = i->first;
+            finalTempo = i->second.tempo;
+            }
+
+      // Go back the the event before tick
       --i;
+
+      // Linearly interpolate if necessary
+      if (ramp) {
+            qreal progress = qreal(tick - i->first)/(etick - i->first);
+            return i->second.tempo + (finalTempo - i->second.tempo) * progress;
+            }
+
       return i->second.tempo;
       }
 
@@ -242,7 +262,7 @@ qreal TempoMap::tick2time(int tick, int* sn) const
       {
       qreal time  = 0.0;
       qreal delta = qreal(tick);
-      qreal tempo = 2.0;
+      qreal tempo = DEFAULT_TEMPO;
 
       if (!empty()) {
             int ptick  = 0;
@@ -287,7 +307,7 @@ int TempoMap::time2tick(qreal time, int* sn) const
       qreal tempo = _tempo;
 
       delta = 0.0;
-      tempo = 2.0;
+      tempo = DEFAULT_TEMPO;
       for (auto e = begin(); e != end(); ++e) {
             // if in a pause period, wait on previous tick
             if ((time <= e->second.time) && (time > e->second.time - e->second.pause)) {

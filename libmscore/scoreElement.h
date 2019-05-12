@@ -123,6 +123,8 @@ class LineSegment;
 class BSymbol;
 class TextLineBase;
 class Fermata;
+class TempoLine;
+class TempoLineSegment;
 
 class LetRing;
 class LetRingSegment;
@@ -314,6 +316,8 @@ class ScoreElement {
       CONVERT(Accidental,    ACCIDENTAL)
       CONVERT(TextLine,      TEXTLINE)
       CONVERT(TextLineSegment,      TEXTLINE_SEGMENT)
+      CONVERT(TempoLine,     TEMPOLINE)
+      CONVERT(TempoLineSegment,     TEMPOLINE_SEGMENT)
       CONVERT(Pedal,         PEDAL)
       CONVERT(PedalSegment,  PEDAL_SEGMENT)
       CONVERT(OttavaSegment, OTTAVA_SEGMENT)
@@ -371,6 +375,7 @@ class ScoreElement {
          || isPalmMuteSegment()
          || isPedalSegment()
          || isVoltaSegment()
+         || isTempoLineSegment()
          ;
          }
       bool isLineSegment() const {
@@ -392,6 +397,7 @@ class ScoreElement {
             || isPedal()
             || isTextLine()
             || isVolta()
+            || isTempoLine()
             ;
             }
       bool isSLine() const {
@@ -562,6 +568,8 @@ static inline const a* to##a(const ScoreElement* e) { Q_ASSERT(e == 0 || e->is##
       CONVERT(Accidental)
       CONVERT(TextLine)
       CONVERT(TextLineSegment)
+      CONVERT(TempoLine)
+      CONVERT(TempoLineSegment)
       CONVERT(Pedal)
       CONVERT(PedalSegment)
       CONVERT(OttavaSegment)

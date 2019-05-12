@@ -83,6 +83,7 @@
 #include "libmscore/vibrato.h"
 #include "libmscore/palmmute.h"
 #include "libmscore/fermata.h"
+#include "libmscore/tempoline.h"
 
 #include "palette/palettetree.h"
 #include "palette/palettewidget.h"
@@ -1549,6 +1550,16 @@ PalettePanel* MuseScore::newTempoPalettePanel(bool defaultPalettePanel)
                   sp->append(tt, QT_TRANSLATE_NOOP("Palette", "Tempo text"), QString(), 1.5);
                   }
             }
+
+      // Add rit line (NOTE:JT - testing)
+      qreal w = gscore->spatium() * 8;
+      TempoLine* ritLine = new TempoLine(gscore);
+      ritLine->setLen(w);
+      ritLine->setBeginText("rit.");
+      ritLine->setEndText("a tempo");
+      ritLine->setProperty(Pid::TEMPO_CHANGE, -30/60.0);
+      sp->append(ritLine, tr("Ritardando"));
+
       sp->setMoreElements(false);
 
       return sp;

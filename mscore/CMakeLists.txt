@@ -204,6 +204,7 @@ QT5_WRAP_UI (ui_headers
       inspector/scale_select.ui
       inspector/size_select.ui
       inspector/inspector_stem.ui
+      inspector/inspector_tempoline.ui
       ${SCRIPT_UI}
       )
 
@@ -438,6 +439,7 @@ add_executable ( ${ExecutableName}
       inspector/inspectorLetRing.cpp
       inspector/inspectorPalmMute.cpp
       inspector/inspectorPedal.cpp
+      inspector/inspectorTempoLine.cpp
       inspector/inspectorDynamic.cpp
       inspector/inspectorInstrchange.cpp
       inspector/inspectorElementBase.cpp
