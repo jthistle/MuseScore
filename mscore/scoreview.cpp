@@ -1855,6 +1855,8 @@ void ScoreView::cmd(const char* s)
             }
       else if (cmd == "play") {
             if (seq && seq->canStart()) {
+                  qDebug("Play dump");
+                  score()->tempomap()->dump();
                   if (state == ViewState::NORMAL || state == ViewState::NOTE_ENTRY)
                         changeState(ViewState::PLAY);
                   else if (state == ViewState::PLAY)

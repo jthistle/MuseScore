@@ -26,7 +26,7 @@ InspectorTempoLine::InspectorTempoLine(QWidget* parent)
       {
       tl.setupUi(addWidget());
 
-      const std::vector<InspectorItem> il = { 
+      const std::vector<InspectorItem> il = {
             { Pid::PLACEMENT,     0, tl.placement,    tl.resetPlacement              },
             { Pid::TEMPO_CHANGE,  0, tl.tempoChange,  tl.resetTempoChange            },
             };

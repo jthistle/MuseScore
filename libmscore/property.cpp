@@ -817,6 +817,8 @@ QString propertyToString(Pid id, QVariant value, bool mscx)
                         v = "top";
                   return QString("%1,%2").arg(h, v);
                   }
+            case P_TYPE::TEMPO:
+                  return QString::number(value.toDouble());
             case P_TYPE::POINT_MM:
                   qFatal("unknown: POINT_MM");
             case P_TYPE::SIZE_MM:
@@ -825,8 +827,6 @@ QString propertyToString(Pid id, QVariant value, bool mscx)
                   qFatal("unknown: TDURATION");
             case P_TYPE::BEAM_MODE:
                   qFatal("unknown: BEAM_MODE");
-            case P_TYPE::TEMPO:
-                  qFatal("unknown: TEMPO");
             case P_TYPE::GROUPS:
                   qFatal("unknown: GROUPS");
             case P_TYPE::INT_LIST:

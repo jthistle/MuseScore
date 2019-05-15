@@ -28,13 +28,15 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(TempoTypes);
 
 struct TEvent {
       TempoTypes type;
-      qreal tempo;     // beats per second
+      qreal tempo;     // absolute tempo for fix or change in tempo for ramp, in beats per second
       qreal pause;     // pause in seconds
       qreal time;      // precomputed time for tick in sec
 
+      int startTick;  // used for ramps only
+
       TEvent();
       TEvent(const TEvent& e);
-      TEvent(qreal bps, qreal seconds, TempoType t);
+      TEvent(qreal bps, qreal seconds, TempoType t, int s);
       bool valid() const;
 
       bool isFix() const     { return type & TempoType::FIX; }
@@ -69,8 +71,9 @@ class TempoMap : public std::map<int, TEvent> {
       int time2tick(qreal time, int* sn = 0) const;
       int time2tick(qreal time, int tick, int* sn) const;
       int tempoSN() const { return _tempoSN; }
+      qreal rampTime(int delta, int etick, TEvent& e, int stick, TEvent& pe) const;
 
-      void setTempo(int tick, qreal tempo, bool ramp = false);
+      void setTempo(int tick, qreal tempo, int startTick = -1);
       void setPause(int tick, qreal pause);
       void delTempo(int tick);
 
