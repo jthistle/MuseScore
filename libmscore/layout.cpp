@@ -64,6 +64,7 @@
 #include "spacer.h"
 #include "fermata.h"
 #include "measurenumber.h"
+#include "tempoline.h"
 
 namespace Ms {
 
@@ -2722,6 +2723,25 @@ void Score::getNextMeasure(LayoutContext& lc)
                         if (e->isSymbol())
                               e->layout();
                         }
+                  }
+            }
+      
+      // We need to do this after updating tempo text
+      if (isMaster()) {
+            // Update rits. and accels. -- NOTE:JT bring together in one function?
+            for (auto const& i : spanner()) {
+                  // NOTE:JT - this could be done better
+                  // We update tempo lines from the end of the line
+                  const Fraction& thisTick = i.second->tick2();
+                  if (thisTick < measure->tick() || thisTick > measure->endTick())
+                        continue;
+                  Spanner* sp = i.second;
+                  if (!sp->isTempoLine())
+                        continue;
+
+                  qDebug("LAYOUT: Have tempo line.");
+                  TempoLine* tline = toTempoLine(sp);
+                  tline->updateTempoMap(tempomap());
                   }
             }
 

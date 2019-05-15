@@ -73,6 +73,7 @@
 #include "breath.h"
 #include "instrchange.h"
 #include "synthesizerstate.h"
+#include "tempoline.h"
 
 namespace Ms {
 
@@ -547,6 +548,18 @@ void Score::rebuildTempoAndTimeSigMaps(Measure* measure)
 
             if (pm && (!mTicks.identical(pm->ticks()) || !m->timesig().identical(pm->timesig())))
                   sigmap()->add(m->tick().ticks(), SigEvent(mTicks, m->timesig(), m->no()));
+            }
+
+      // Update rits. and accels. -- TODO TEST
+      // NOTE:JT
+      for (auto const& i : spanner()) {
+            Spanner* sp = i.second;
+            if (!sp->isTempoLine())
+                  continue;
+
+            qDebug("FIX TICKS: Have tempo line.");
+            TempoLine* tline = toTempoLine(sp);
+            tline->updateTempoMap(tempomap());
             }
       }
 

@@ -28,6 +28,7 @@ class TempoLineSegment final : public TextLineBaseSegment {
       virtual ElementType type() const override          { return ElementType::TEMPOLINE_SEGMENT; }
       virtual TempoLineSegment* clone() const override   { return new TempoLineSegment(*this); }
       virtual void layout() override;
+      virtual Element* propertyDelegate(Pid pid) override;
       };
 
 //---------------------------------------------------------
@@ -43,6 +44,9 @@ class TempoLine final : public TextLineBase {
       TempoLine(Score* s);
       TempoLine(const TempoLine& tl);
 
+      void updateScore();
+      void updateTempoMap(TempoMap* tmap);
+
       virtual ElementType type() const override    { return ElementType::TEMPOLINE; }
       virtual TempoLine* clone() const override     { return new TempoLine(*this); }
       virtual LineSegment* createLineSegment() override;
@@ -50,6 +54,9 @@ class TempoLine final : public TextLineBase {
       virtual QVariant getProperty(Pid id) const override;
       virtual bool setProperty(Pid propertyId, const QVariant&) override;
       virtual QVariant propertyDefault(Pid id) const override;
+
+      virtual void write(XmlWriter& xml) const override;
+      virtual void writeProperties(XmlWriter& xml) const override;
       };
 
 }      // namespace Ms
