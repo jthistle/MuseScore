@@ -40,6 +40,7 @@
 #include "inspectorNoteDot.h"
 #include "inspectorInstrchange.h"
 #include "inspectorMeasureNumber.h"
+#include "inspectorTempoLine.h"
 #include "musescore.h"
 #include "scoreview.h"
 #include "bendproperties.h"
@@ -259,6 +260,9 @@ void Inspector::update(Score* s)
                               break;
                         case ElementType::TEXTLINE_SEGMENT:
                               ie = new InspectorTextLine(this);
+                              break;
+                        case ElementType::TEMPOLINE_SEGMENT:
+                              ie = new InspectorTempoLine(this); // NOTE:JT todo
                               break;
                         case ElementType::PEDAL_SEGMENT:
                               ie = new InspectorPedal(this);

@@ -96,7 +96,7 @@
 #include "palmmute.h"
 #include "fermata.h"
 #include "shape.h"
-//#include "musescoreCore.h"
+#include "tempoline.h"
 
 namespace Ms {
 
@@ -1065,7 +1065,7 @@ Element* Element::create(ElementType type, Score* score)
             case ElementType::BAGPIPE_EMBELLISHMENT: return new BagpipeEmbellishment(score);
             case ElementType::AMBITUS:           return new Ambitus(score);
             case ElementType::STICKING:          return new Sticking(score);
-
+            case ElementType::TEMPOLINE:         return new TempoLine(score);
             case ElementType::LYRICSLINE:
             case ElementType::TEXTLINE_BASE:
             case ElementType::TEXTLINE_SEGMENT:
@@ -1104,6 +1104,7 @@ Element* Element::create(ElementType type, Score* score)
             case ElementType::STAFF:
             case ElementType::SCORE:
             case ElementType::BRACKET_ITEM:
+            case ElementType::TEMPOLINE_SEGMENT:
                   break;
             }
       qDebug("cannot create type %d <%s>", int(type), Element::name(type));

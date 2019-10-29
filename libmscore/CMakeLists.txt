@@ -53,7 +53,7 @@ add_library (
       pos.h property.h range.h read206.h rehearsalmark.h repeat.h repeatlist.h rest.h revisions.h score.h scoreElement.h segment.h
       segmentlist.h select.h sequencer.h shadownote.h shape.h sig.h slur.h slurtie.h spacer.h spanner.h spannermap.h spatium.h
       staff.h stafflines.h staffstate.h stafftext.h stafftextbase.h stafftype.h stafftypechange.h stafftypelist.h stem.h
-      stemslash.h stringdata.h style.h sym.h symbol.h synthesizerstate.h system.h systemdivider.h systemtext.h tempo.h
+      stemslash.h stringdata.h style.h sym.h symbol.h synthesizerstate.h system.h systemdivider.h systemtext.h tempo.h tempoline.h
       tempotext.h text.h measurenumber.h textbase.h textedit.h textframe.h textline.h textlinebase.h tie.h tiemap.h timesig.h
       tremolo.h tremolobar.h trill.h tuplet.h tupletmap.h types.h undo.h utils.h vibrato.h volta.h xml.h
 
@@ -100,6 +100,7 @@ add_library (
       connector.cpp location.cpp skyline.cpp
       scorediff.cpp
       unrollrepeats.cpp
+      tempoline.cpp
       )
 
 ##

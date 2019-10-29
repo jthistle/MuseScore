@@ -1414,12 +1414,13 @@ void Score::addElement(Element* element)
             case ElementType::VIBRATO:
             case ElementType::PEDAL:
             case ElementType::TEXTLINE:
+            case ElementType::TEMPOLINE:
             case ElementType::HAIRPIN:
             case ElementType::LET_RING:
             case ElementType::PALM_MUTE:
                   {
                   Spanner* spanner = toSpanner(element);
-                  if (et == ElementType::TEXTLINE && spanner->anchor() == Spanner::Anchor::NOTE)
+                  if ((et == ElementType::TEXTLINE || et == ElementType::TEMPOLINE) && spanner->anchor() == Spanner::Anchor::NOTE)
                         break;
                   addSpanner(spanner);
                   for (SpannerSegment* ss : spanner->spannerSegments()) {
@@ -1580,10 +1581,11 @@ void Score::removeElement(Element* element)
             case ElementType::LET_RING:
             case ElementType::PALM_MUTE:
             case ElementType::TEXTLINE:
+            case ElementType::TEMPOLINE:
             case ElementType::HAIRPIN:
                   {
                   Spanner* spanner = toSpanner(element);
-                  if (et == ElementType::TEXTLINE && spanner->anchor() == Spanner::Anchor::NOTE)
+                  if ((et == ElementType::TEXTLINE || et == ElementType::TEMPOLINE) && spanner->anchor() == Spanner::Anchor::NOTE)
                         break;
                   spanner->triggerLayout();
                   removeSpanner(spanner);

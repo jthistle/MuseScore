@@ -1027,6 +1027,7 @@ void Note::add(Element* e)
                   _accidental = toAccidental(e);
                   break;
             case ElementType::TEXTLINE:
+            case ElementType::TEMPOLINE:
             case ElementType::GLISSANDO:
                   addSpanner(toSpanner(e));
                   break;
@@ -1069,6 +1070,7 @@ void Note::remove(Element* e)
                   break;
 
             case ElementType::TEXTLINE:
+            case ElementType::TEMPOLINE:
             case ElementType::GLISSANDO:
                   removeSpanner(toSpanner(e));
                   break;
@@ -1422,6 +1424,7 @@ void Note::readAddConnector(ConnectorInfoReader* info, bool pasteMode)
       switch(type) {
             case ElementType::TIE:
             case ElementType::TEXTLINE:
+            case ElementType::TEMPOLINE:
             case ElementType::GLISSANDO:
                   {
                   Spanner* sp = toSpanner(info->connector());
