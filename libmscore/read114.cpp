@@ -2854,6 +2854,8 @@ Score::FileError MasterScore::read114(XmlReader& e)
                || tag == "yoff")
                   e.skipCurrentElement();       // obsolete
             else if (tag == "tempolist") {
+                  // TODO jt fix
+#if 0
                   // store the tempo list to create invisible tempo text later
                   qreal tempo = e.attribute("fix","2.0").toDouble();
                   tm.setRelTempo(tempo);
@@ -2871,8 +2873,9 @@ Score::FileError MasterScore::read114(XmlReader& e)
                               e.readElementText();
                         else
                               e.unknown();
+                        }
+#endif
                   }
-            }
             else if (tag == "playMode")
                   setPlayMode(PlayMode(e.readInt()));
             else if (tag == "SyntiSettings")
@@ -3218,10 +3221,10 @@ Score::FileError MasterScore::read114(XmlReader& e)
       // add invisible tempo text if necessary
       // some 1.3 scores have tempolist but no tempo text
       fixTicks();
-      for (auto i : tm) {
-            Fraction tick = Fraction::fromTicks(i.first);
-            qreal tempo   = i.second.tempo;
-            if (tempomap()->tempo(tick.ticks()) != tempo) {
+      for (auto i = tm.cbegin(); i != tm.cend(); i++) {
+            Fraction tick = i.key();
+            qreal tempo   = tm.val(tick);
+            if (tempomap()->tempo(tick) != tempo) {
                   TempoText* tt = new TempoText(this);
                   tt->setXmlText(QString("<sym>metNoteQuarterUp</sym> = %1").arg(qRound(tempo*60)));
                   tt->setTempo(tempo);

@@ -1174,7 +1174,7 @@ void renderArpeggio(Chord *chord, QList<NoteEventList> & ell)
             NoteEventList* events = &(ell)[i];
             events->clear();
 
-            auto tempoRatio = chord->score()->tempomap()->tempo(chord->tick().ticks()) / Score::defaultTempo();
+            auto tempoRatio = chord->score()->tempomap()->tempo(chord->tick()) / Score::defaultTempo();
             int ot = (l * j * 1000) / chord->upNote()->playTicks() *
                         tempoRatio * chord->arpeggio()->Stretch();
 
@@ -2044,9 +2044,9 @@ void MidiRenderer::renderMetronome(const Chunk& chunk, EventMap* events)
 
 void MidiRenderer::renderMetronome(EventMap* events, Measure* m, const Fraction& tickOffset)
       {
-      int msrTick         = m->tick().ticks();
-      qreal tempo         = score->tempomap()->tempo(msrTick);
-      TimeSigFrac timeSig = score->sigmap()->timesig(msrTick).nominal();
+      int msrTick    = m->tick().ticks();
+      qreal tempo         = score->tempomap()->tempo(m->tick());
+      TimeSigFrac timeSig = score->sigmap()->timesig(m->tick()).nominal();
 
       int clickTicks      = timeSig.isBeatedCompound(tempo) ? timeSig.beatTicks() : timeSig.dUnitTicks();
       int endTick         = m->endTick().ticks();

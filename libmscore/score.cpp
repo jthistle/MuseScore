@@ -449,9 +449,10 @@ void Score::fixTicks()
 
             tick += measureTicks;
             }
+      // NOTE:JT
       // Now done in getNextMeasure(), do we keep?
-      if (tempomap()->empty())
-            tempomap()->setTempo(0, _defaultTempo);
+      // if (tempomap()->empty())
+      //       tempomap()->setTempo(0, _defaultTempo);
       }
 
 //---------------------------------------------------------
@@ -461,6 +462,7 @@ void Score::fixTicks()
 
 void Score::rebuildTempoAndTimeSigMaps(Measure* measure)
       {
+#if 0 // NOTE:JT todo
       if (isMaster()) {
             // Reset tempo to set correct time stretch for fermata.
             const Fraction& startTick = measure->tick();
@@ -563,6 +565,7 @@ void Score::rebuildTempoAndTimeSigMaps(Measure* measure)
             TempoLine* tline = toTempoLine(sp);
             tline->updateTempoMap(tempomap());
             }
+#endif
       }
 
 //---------------------------------------------------------
@@ -3495,7 +3498,7 @@ void Score::setTempo(Segment* segment, qreal tempo)
 
 void Score::setTempo(const Fraction& tick, qreal tempo)
       {
-      tempomap()->setTempo(tick.ticks(), tempo);
+      tempomap()->addFixed(tick, tempo);
       setPlaylistDirty();
       }
 
@@ -3505,7 +3508,8 @@ void Score::setTempo(const Fraction& tick, qreal tempo)
 
 void Score::removeTempo(const Fraction& tick)
       {
-      tempomap()->delTempo(tick.ticks());
+      // NOTE:JT todo, is different with map
+      tempomap()->remove(tick);
       setPlaylistDirty();
       }
 
@@ -3526,6 +3530,7 @@ void Score::resetTempo()
 
 void Score::resetTempoRange(const Fraction& tick1, const Fraction& tick2)
       {
+#if 0 // NOTE:JT todo
       const bool zeroInRange = (tick1 <= Fraction(0,1) && tick2 > Fraction(0,1));
       tempomap()->clearRange(tick1.ticks(), tick2.ticks());
       if (zeroInRange)
@@ -3536,6 +3541,7 @@ void Score::resetTempoRange(const Fraction& tick1, const Fraction& tick2)
             if (m)
                   sigmap()->add(0, SigEvent(m->ticks(),  m->timesig(), 0));
             }
+#endif
       }
 
 //---------------------------------------------------------
@@ -3544,8 +3550,10 @@ void Score::resetTempoRange(const Fraction& tick1, const Fraction& tick2)
 
 void Score::setPause(const Fraction& tick, qreal seconds)
       {
+#if 0 // NOTE:JT todo
       tempomap()->setPause(tick.ticks(), seconds);
       setPlaylistDirty();
+#endif
       }
 
 //---------------------------------------------------------
@@ -3554,7 +3562,7 @@ void Score::setPause(const Fraction& tick, qreal seconds)
 
 qreal Score::tempo(const Fraction& tick) const
       {
-      return tempomap()->tempo(tick.ticks());
+      return tempomap()->tempo(tick);
       }
 
 //---------------------------------------------------------

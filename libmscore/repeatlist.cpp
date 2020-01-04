@@ -207,10 +207,10 @@ void RepeatList::updateTempo()
       for(RepeatSegment* s : *this) {
             s->utick      = utick;
             s->utime      = t;
-            qreal ct      = tl->tick2time(s->tick);
+            qreal ct      = tl->tick2time(Fraction::fromTicks(s->tick));
             s->timeOffset = t - ct;
             utick        += s->len();
-            t            += tl->tick2time(s->tick + s->len()) - ct;
+            t            += tl->tick2time(Fraction::fromTicks(s->tick + s->len())) - ct;
             }
       }
 
@@ -264,7 +264,7 @@ qreal RepeatList::utick2utime(int tick) const
       for (unsigned i = ii; i < n; ++i) {
             if ((tick >= at(i)->utick) && ((i + 1 == n) || (tick < at(i+1)->utick))) {
                   int t     = tick - (at(i)->utick - at(i)->tick);
-                  qreal tt = _score->tempomap()->tick2time(t) + at(i)->timeOffset;
+                  qreal tt = _score->tempomap()->tick2time(Fraction::fromTicks(t)) + at(i)->timeOffset;
                   return tt;
                   }
             }
@@ -282,7 +282,7 @@ int RepeatList::utime2utick(qreal t) const
       for (unsigned i = ii; i < n; ++i) {
             if ((t >= at(i)->utime) && ((i + 1 == n) || (t < at(i+1)->utime))) {
                   idx2 = i;
-                  return _score->tempomap()->time2tick(t - at(i)->timeOffset) + (at(i)->utick - at(i)->tick);
+                  return _score->tempomap()->time2tick(t - at(i)->timeOffset).ticks() + (at(i)->utick - at(i)->tick);
                   }
             }
       if (MScore::debugMode) {

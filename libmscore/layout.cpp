@@ -2729,10 +2729,11 @@ void Score::getNextMeasure(LayoutContext& lc)
                         }
                   }
             }
-      
+
       // We need to do this after updating tempo text
-      if (isMaster()) {
-            // Update rits. and accels. -- NOTE:JT bring together in one function?
+      if (isMaster() && false) {    // TODO not running temporarily
+            // Update rits. and accels.
+            // NOTE:JT bring together in one function?
             for (auto const& i : spanner()) {
                   // NOTE:JT - this could be done better
                   // We update tempo lines from the end of the line

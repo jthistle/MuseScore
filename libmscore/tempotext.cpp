@@ -45,7 +45,7 @@ TempoText::TempoText(Score* s)
    : TextBase(s, Tid::TEMPO, ElementFlags(ElementFlag::SYSTEM))
       {
       initElementStyle(&tempoStyle);
-      _tempo      = TempoMap::DEFAULT_TEMPO;
+      _tempo      = Score::defaultTempo();
       _followText = false;
       _relative   = 1.0;
       _isRelative = false;
@@ -383,7 +383,7 @@ QVariant TempoText::propertyDefault(Pid id) const
             case Pid::SUB_STYLE:
                   return int(Tid::TEMPO);
             case Pid::TEMPO:
-                  return TempoMap::DEFAULT_TEMPO;
+                  return Score::defaultTempo();
             case Pid::TEMPO_FOLLOW_TEXT:
                   return false;
             default:

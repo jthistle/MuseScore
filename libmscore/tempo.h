@@ -13,74 +13,32 @@
 #ifndef __AL_TEMPO_H__
 #define __AL_TEMPO_H__
 
+#include "changeMap.h"
+
 namespace Ms {
 
 class XmlWriter;
-
-enum class TempoType : char { INVALID = 0x0, PAUSE = 0x1, FIX = 0x2, RAMP = 0x4};
-
-typedef QFlags<TempoType> TempoTypes;
-Q_DECLARE_OPERATORS_FOR_FLAGS(TempoTypes);
-
-//---------------------------------------------------------
-//   Tempo Event
-//---------------------------------------------------------
-
-struct TEvent {
-      TempoTypes type;
-      qreal tempo;     // absolute tempo for fix or change in tempo for ramp, in beats per second
-      qreal pause;     // pause in seconds
-      qreal time;      // precomputed time for tick in sec
-
-      int startTick;  // used for ramps only
-
-      TEvent();
-      TEvent(const TEvent& e);
-      TEvent(qreal bps, qreal seconds, TempoType t, int s);
-      bool valid() const;
-
-      bool isFix() const     { return type & TempoType::FIX; }
-      bool isRamp() const    { return type & TempoType::RAMP; }
-      bool isPause() const   { return type & TempoType::PAUSE; }
-      };
+class ChangeMap;
 
 //---------------------------------------------------------
 //   Tempomap
 //---------------------------------------------------------
 
-class TempoMap : public std::map<int, TEvent> {
-      int _tempoSN;           // serial no to track tempo changes
-      qreal _tempo;           // tempo if not using tempo list (beats per second)
-      qreal _relTempo;        // rel. tempo
-
-      void normalize();
-      void del(int tick);
+class TempoMap : public ChangeMap {
+      qreal _relTempo   { 1.0 };
 
    public:
-      TempoMap();
-      void clear();
-      void clearRange(int tick1, int tick2);
+      TempoMap() {}
 
-      void dump() const;
+      int tempo(Fraction tick)      { return val(tick); }
 
-      qreal tempo(int tick) const;
+      qreal relTempo() const  { return _relTempo; }
+      void setRelTempo(qreal val)   { _relTempo = val; }
 
-      qreal tick2time(int tick, int* sn = 0) const;
-      qreal tick2timeLC(int tick, int* sn) const;
-      qreal tick2time(int tick, qreal time, int* sn) const;
-      int time2tick(qreal time, int* sn = 0) const;
-      int time2tick(qreal time, int tick, int* sn) const;
-      int tempoSN() const { return _tempoSN; }
-      qreal rampTime(int delta, int etick, TEvent& e, int stick, TEvent& pe) const;
-
-      void setTempo(int tick, qreal tempo, int startTick = -1);
-      void setPause(int tick, qreal pause);
-      void delTempo(int tick);
-
-      void setRelTempo(qreal val);
-      qreal relTempo() const { return _relTempo; }
-
-      static constexpr qreal DEFAULT_TEMPO { 2.0 };
+      qreal tick2time(Fraction tick, qreal time, int* sn) const;
+      Fraction time2tick(qreal time, Fraction t, int* sn) const;
+      qreal tick2time(Fraction tick, int* sn = 0) const;
+      Fraction time2tick(qreal time, int* sn = 0) const;
       };
 
 }     // namespace Ms

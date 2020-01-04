@@ -162,7 +162,7 @@ Fraction Dynamic::velocityChangeLength() const
       if (changeInVelocity() == 0)
             return Fraction::fromTicks(0);
 
-      double ratio = double(score()->tempomap()->tempo(segment()->tick().ticks())) / double(Score::defaultTempo());
+      double ratio = double(score()->tempomap()->tempo(segment()->tick())) / double(Score::defaultTempo());
       double speedMult;
       switch (velChangeSpeed()) {
             case Dynamic::Speed::SLOW:

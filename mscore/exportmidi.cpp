@@ -182,6 +182,7 @@ void ExportMidi::writeHeader()
       //     don't need to unwind or add pauses as this was done already
       //--------------------------------------------
 
+#if 0 // NOTE:JT todo
       TempoMap* tempomap = pauseMap.tempomapWithPauses;
       qreal relTempo = tempomap->relTempo();
       for (auto it = tempomap->cbegin(); it != tempomap->cend(); ++it) {
@@ -201,6 +202,7 @@ void ExportMidi::writeHeader()
             ev.setEData(data);
             track.insert(it->first, ev);
             }
+#endif
       }
 
 //---------------------------------------------------------
@@ -363,6 +365,7 @@ bool ExportMidi::write(const QString& name, bool midiExpandRepeats, bool exportR
 
 void ExportMidi::PauseMap::calculate(const Score* s)
       {
+#if 0 //NOTE:JT todo
       Q_ASSERT(s);
       TimeSigMap* sigmap = s->sigmap();
       TempoMap* tempomap = s->tempomap();
@@ -402,6 +405,7 @@ void ExportMidi::PauseMap::calculate(const Score* s)
                         }
                   }
             }
+#endif
       }
 
 //---------------------------------------------------------

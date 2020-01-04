@@ -199,7 +199,7 @@ void PlayPanel::setScore(Score* s)
       posSlider->setEnabled(enable);
       tempoSlider->setEnabled(enable);
       if (cs && seq && seq->canStart()) {
-            setTempo(cs->tempomap()->tempo(0));
+            setTempo(cs->tempomap()->tempo(Fraction()));
             setRelTempo(cs->tempomap()->relTempo());
             setEndpos(cs->repeatList().ticks());
             Fraction tick = cs->pos(POS::CURRENT);
@@ -317,7 +317,7 @@ void PlayPanel::updateTimeLabel(int sec)
       sec                = sec % 60;
       int h              = m / 60;
       m                  = m % 60;
-      
+
       // time is displayed in three separate labels
       // this prevents jitter as width of time grows and shrinks
       // alternative would be to use a monospaced font and a
@@ -329,11 +329,11 @@ void PlayPanel::updateTimeLabel(int sec)
       char minBuffer[8];
       sprintf(minBuffer, "%02d", m);
       minuteLabel->setText(QString(minBuffer));
-      
+
       char secondBuffer[8];
       sprintf(secondBuffer, "%02d", sec);
       secondLabel->setText(QString(secondBuffer));
-          
+
       }
 
 //---------------------------------------------------------
@@ -350,10 +350,10 @@ void PlayPanel::updatePosLabel(int utick)
       if (cs) {
             tick = cs->repeatList().utick2tick(utick);
             cs->sigmap()->tickValues(tick, &bar, &beat, &t);
-            double tpo = cs->tempomap()->tempo(tick) * cs->tempomap()->relTempo();
+            double tpo = cs->tempomap()->tempo(Fraction::fromTicks(tick)) * cs->tempomap()->relTempo();
             setTempo(tpo);
             }
-     
+
       // position is displayed in two separate labels
       // this prevents jitter as width of time grows and shrinks
       // alternative would be to use a monospaced font and a
@@ -379,7 +379,7 @@ void PlayPanel::tempoSliderPressed(int)
 //---------------------------------------------------------
 //   setVolume
 //---------------------------------------------------------
-      
+
 void PlayPanel::volLabel()
       {
       volSpinBox->setValue(synti->gainAsDecibels());

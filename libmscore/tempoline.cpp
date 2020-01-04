@@ -118,6 +118,7 @@ LineSegment* TempoLine::createLineSegment()
 
 void TempoLine::updateTempoMap(TempoMap* tmap)
       {
+#if 0 // NOTE:JT todo
       qDebug("Tempo line: update map");
       if (startSegment() && endSegment()) {
             int stick = tick().ticks();
@@ -133,6 +134,7 @@ void TempoLine::updateTempoMap(TempoMap* tmap)
                   }
             }
       qDebug("Tempo line: finished update");
+#endif
       }
 
 void TempoLine::updateScore()
