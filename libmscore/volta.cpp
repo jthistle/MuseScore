@@ -301,7 +301,7 @@ void Volta::setVelocity() const
             Fraction startTick  = Fraction::fromTicks(startMeasure->tick().ticks() - 1);
             Fraction endTick    = Fraction::fromTicks((endMeasure->tick() + endMeasure->ticks()).ticks() - 1);
             Staff* st      = staff();
-            ChangeMap& velo = st->velocities();
+            auto& velo = st->velocities();
             auto prevVelo  = velo.val(startTick);
             velo.addFixed(endTick, prevVelo);
             }

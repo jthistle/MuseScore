@@ -18,13 +18,20 @@
 namespace Ms {
 
 class XmlWriter;
-class ChangeMap;
+
+class TempoEvent : ChangeEvent {
+   public:
+      TempoEvent() : ChangeEvent() {}
+
+      friend class ChangeMap<TempoEvent>;
+      };
+
 
 //---------------------------------------------------------
 //   Tempomap
 //---------------------------------------------------------
 
-class TempoMap : public ChangeMap {
+class TempoMap : public ChangeMap<TempoEvent> {
       qreal _relTempo   { 1.0 };
 
    public:

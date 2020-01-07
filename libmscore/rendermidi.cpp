@@ -336,7 +336,7 @@ static void collectNote(EventMap* events, int channel, const Note* note, qreal v
       // Single-note dynamics
       // Find any changes, and apply events
       if (config.useSND) {
-            ChangeMap& veloEvents = staff->velocities();
+            auto& veloEvents = staff->velocities();
             Fraction stick = chord->tick();
             Fraction etick = stick + chord->ticks();
             auto changes = veloEvents.changesInRange(stick, etick);
@@ -735,12 +735,12 @@ void Score::updateVelo()
             return;
 
       for (Staff* st : _staves) {
-            ChangeMap& velo = st->velocities();
+            auto& velo = st->velocities();
             velo.clear();
             }
       for (int staffIdx = 0; staffIdx < nstaves(); ++staffIdx) {
             Staff* st      = staff(staffIdx);
-            ChangeMap& velo = st->velocities();
+            auto& velo = st->velocities();
             Part* prt      = st->part();
             int partStaves = prt->nstaves();
             int partStaff  = Score::staffIdx(prt);
@@ -783,7 +783,7 @@ void Score::updateVelo()
                               case Dynamic::Range::PART:
                                     if (dStaffIdx >= partStaff && dStaffIdx < partStaff+partStaves) {
                                           for (int i = partStaff; i < partStaff+partStaves; ++i) {
-                                                ChangeMap& stVelo = staff(i)->velocities();
+                                                auto& stVelo = staff(i)->velocities();
                                                 stVelo.addFixed(tick, v);
                                                 if (change != 0) {
                                                       Fraction etick = tick + d->velocityChangeLength();
@@ -795,7 +795,7 @@ void Score::updateVelo()
                                     break;
                               case Dynamic::Range::SYSTEM:
                                     for (int i = 0; i < nstaves(); ++i) {
-                                          ChangeMap& stVelo = staff(i)->velocities();
+                                          auto& stVelo = staff(i)->velocities();
                                           stVelo.addFixed(tick, v);
                                           if (change != 0) {
                                                 Fraction etick = tick + d->velocityChangeLength();

@@ -792,7 +792,7 @@ QString propertyToString(Pid id, QVariant value, bool mscx)
             case P_TYPE::CHANGE_SPEED:
                   return Dynamic::speedToName(Dynamic::Speed(value.toInt()));
             case P_TYPE::CHANGE_METHOD:
-                  return ChangeMap::changeMethodToName(ChangeMethod(value.toInt()));
+                  return ChangeMap<ChangeEvent>::changeMethodToName(ChangeMethod(value.toInt()));
             case P_TYPE::CLEF_TYPE:
                   return ClefInfo::tag(ClefType(value.toInt()));
             case P_TYPE::DYNAMIC_TYPE:

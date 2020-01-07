@@ -93,7 +93,7 @@ class Staff final : public ScoreElement {
       QMap<int,int> _capoList;
       bool _playbackVoice[VOICES] { true, true, true, true };
 
-      ChangeMap _velocities;         ///< cached value
+      ChangeMap<ChangeEvent> _velocities;         ///< cached value
       PitchList _pitchOffsets;      ///< cached value
 
       void fillBrackets(int);
@@ -223,7 +223,7 @@ class Staff final : public ScoreElement {
       qreal spatium(const Fraction&) const;
       //===========
 
-      ChangeMap& velocities()           { return _velocities;     }
+      ChangeMap<ChangeEvent>& velocities()           { return _velocities;     }
       PitchList& pitchOffsets()        { return _pitchOffsets;   }
 
       int pitchOffset(const Fraction& tick) { return _pitchOffsets.pitchOffset(tick.ticks());   }

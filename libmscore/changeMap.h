@@ -22,6 +22,8 @@
 
 namespace Ms {
 
+template <class EventT> class ChangeMap;
+
 enum class ChangeMethod : signed char {
       NORMAL,
       EXPONENTIAL,
@@ -60,7 +62,7 @@ class ChangeEvent {
       bool operator==(const ChangeEvent& event) const;
       bool operator!=(const ChangeEvent& event) const { return !(operator==(event)); }
 
-      friend class ChangeMap;
+      friend class ChangeMap<ChangeEvent>;
       };
 
 //---------------------------------------------------------
@@ -70,7 +72,8 @@ class ChangeEvent {
 
 typedef std::vector<std::pair<Fraction, Fraction>> EndPointsVector;
 
-class ChangeMap : public QMultiMap<Fraction, ChangeEvent> {
+template <class EventT>
+class ChangeMap : public QMultiMap<Fraction, EventT> {
       bool cleanedUp    { false };
       static const int DEFAULT_VALUE  { 80 };   // TODO
 
@@ -79,7 +82,7 @@ class ChangeMap : public QMultiMap<Fraction, ChangeEvent> {
             const char* name;
             };
 
-      static bool compareRampEvents(ChangeEvent& a, ChangeEvent& b)     { return a.length > b.length; }
+      static bool compareRampEvents(EventT& a, EventT& b)     { return a.length > b.length; }
 
       void cleanupStage0();
       void cleanupStage1();
@@ -97,7 +100,7 @@ class ChangeMap : public QMultiMap<Fraction, ChangeEvent> {
 
       void dump();
 
-      static int interpolate(Fraction& eventTick, ChangeEvent& event, Fraction& tick);
+      static int interpolate(Fraction& eventTick, EventT& event, Fraction& tick);
       static QString changeMethodToName(ChangeMethod method);
       static ChangeMethod nameToChangeMethod(QString name);
 

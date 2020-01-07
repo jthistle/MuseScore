@@ -25,7 +25,8 @@ namespace Ms {
 ///   You can see these graphically at: https://www.desmos.com/calculator/kk89ficmjk
 //---------------------------------------------------------
 
-int ChangeMap::interpolate(Fraction& eventTick, ChangeEvent& event, Fraction& tick)
+template <class EventT>
+int ChangeMap<EventT>::interpolate(Fraction& eventTick, EventT& event, Fraction& tick)
       {
       Q_ASSERT(event.type == ChangeEventType::RAMP);
 
@@ -109,21 +110,22 @@ int ChangeMap::interpolate(Fraction& eventTick, ChangeEvent& event, Fraction& ti
 ///   `value`, which is a method of QMultiMap.
 //---------------------------------------------------------
 
-int ChangeMap::val(Fraction tick)
+template <class EventT>
+int ChangeMap<EventT>::val(Fraction tick)
       {
       if (!cleanedUp)
             cleanup();
 
-      auto eventIter = upperBound(tick);
-      if (eventIter == begin()) {
+      auto eventIter = this->upperBound(tick);
+      if (eventIter == this->begin()) {
             return DEFAULT_VALUE;
             }
 
       eventIter--;
       bool foundRamp = false;
-      ChangeEvent& rampFound = eventIter.value();       // only used to init
+      EventT& rampFound = eventIter.value();       // only used to init
       Fraction rampFoundStartTick = eventIter.key();
-      for (auto& event : values(rampFoundStartTick)) {
+      for (auto& event : this->values(rampFoundStartTick)) {
             if (event.type == ChangeEventType::RAMP) {
                   foundRamp = true;
                   rampFound = event;
@@ -148,9 +150,10 @@ int ChangeMap::val(Fraction tick)
 //   addFixed
 //---------------------------------------------------------
 
-void ChangeMap::addFixed(Fraction tick, int value)
+template <class EventT>
+void ChangeMap<EventT>::addFixed(Fraction tick, int value)
       {
-      insert(tick, ChangeEvent(value));
+      insert(tick, EventT(value));
       cleanedUp = false;
       }
 
@@ -160,11 +163,12 @@ void ChangeMap::addFixed(Fraction tick, int value)
 ///   velocity event.
 //---------------------------------------------------------
 
-void ChangeMap::addRamp(Fraction stick, Fraction etick, int change, ChangeMethod method, ChangeDirection direction)
+template <class EventT>
+void ChangeMap<EventT>::addRamp(Fraction stick, Fraction etick, int change, ChangeMethod method, ChangeDirection direction)
       {
       change = abs(change);
       change *= (direction == ChangeDirection::INCREASING) ? 1 : -1;
-      insert(stick, ChangeEvent(stick, etick, change, method, direction));
+      insert(stick, EventT(stick, etick, change, method, direction));
       cleanedUp = false;
       }
 
@@ -173,12 +177,13 @@ void ChangeMap::addRamp(Fraction stick, Fraction etick, int change, ChangeMethod
 ///   put the ramps in size order if they start at the same point
 //---------------------------------------------------------
 
-void ChangeMap::cleanupStage0()
+template <class EventT>
+void ChangeMap<EventT>::cleanupStage0()
       {
-      for (auto& tick : uniqueKeys()) {
+      for (auto& tick : this->uniqueKeys()) {
             // rampEvents will contain all the ramps at this tick
-            std::vector<ChangeEvent> rampEvents;
-            for (auto& event : values(tick)) {
+            std::vector<EventT> rampEvents;
+            for (auto& event : this->values(tick)) {
                   if (event.type == ChangeEventType::FIX)
                         continue;
                   rampEvents.push_back(event);
@@ -201,7 +206,8 @@ void ChangeMap::cleanupStage0()
 ///   remove any ramps or fixes that are completely enclosed within other ramps
 //---------------------------------------------------------
 
-void ChangeMap::cleanupStage1()
+template <class EventT>
+void ChangeMap<EventT>::cleanupStage1()
       {
       Fraction currentRampStart = Fraction(-1, 1);    // start point of ramp we're in
       Fraction currentRampEnd = Fraction(-1, 1);      // end point of ramp we're in
@@ -212,10 +218,10 @@ void ChangeMap::cleanupStage1()
       EndPointsVector endPoints;
       std::vector<bool> startsInRamp;
 
-      auto i = begin();
-      while (i != end()) {
+      auto i = this->begin();
+      while (i != this->end()) {
             Fraction tick = i.key();
-            ChangeEvent& event = i.value();
+            EventT& event = i.value();
             Fraction etick = tick + event.length;
 
             // Reset if we've left the ramp we were in
@@ -268,15 +274,16 @@ void ChangeMap::cleanupStage1()
 ///   readjust lengths of any colliding ramps
 //---------------------------------------------------------
 
-void ChangeMap::cleanupStage2(std::vector<bool>& startsInRamp, EndPointsVector& endPoints)
+template <class EventT>
+void ChangeMap<EventT>::cleanupStage2(std::vector<bool>& startsInRamp, EndPointsVector& endPoints)
       {
       // moveTo stores the events that need to be moved to a Fraction position
-      std::map<Fraction, ChangeEvent> moveTo;
-      auto i = begin();
+      std::map<Fraction, EventT> moveTo;
+      auto i = this->begin();
       int j = -1;
-      while (i != end()) {
+      while (i != this->end()) {
             Fraction tick = i.key();
-            ChangeEvent& event = i.value();
+            EventT& event = i.value();
             if (event.type != ChangeEventType::RAMP) {
                   i++;
                   continue;
@@ -306,9 +313,10 @@ void ChangeMap::cleanupStage2(std::vector<bool>& startsInRamp, EndPointsVector& 
 ///   cache start and end values for each ramp
 //---------------------------------------------------------
 
-void ChangeMap::cleanupStage3()
+template <class EventT>
+void ChangeMap<EventT>::cleanupStage3()
       {
-      for (auto i = begin(); i != end(); i++) {
+      for (auto i = this->begin(); i != this->end(); i++) {
             Fraction tick = i.key();
             auto& event = i.value();
             if (event.type != ChangeEventType::RAMP)
@@ -317,7 +325,7 @@ void ChangeMap::cleanupStage3()
             // Phase 1: cache a start value for the ramp
             // Try and get a fix at the tick of this ramp
             bool foundFix = false;
-            for (auto& currentChangeEvent : values(tick)) {
+            for (auto& currentChangeEvent : this->values(tick)) {
                   if (currentChangeEvent.type == ChangeEventType::FIX) {
                         event.cachedStartVal = currentChangeEvent.value;
                         foundFix = true;
@@ -329,13 +337,13 @@ void ChangeMap::cleanupStage3()
             //  - the cached end value if it's a ramp
             //  - the value if it's a fix
             if (!foundFix) {
-                  if (i != begin()) {
+                  if (i != this->begin()) {
                         auto prevChangeEventIter = i;
                         prevChangeEventIter--;
 
                         // Look for a ramp first
                         bool foundRamp = false;
-                        for (auto& prevChangeEvent : values(prevChangeEventIter.key())) {
+                        for (auto& prevChangeEvent : this->values(prevChangeEventIter.key())) {
                               if (prevChangeEvent.type == ChangeEventType::RAMP) {
                                     event.cachedStartVal = prevChangeEvent.cachedEndVal;
                                     foundRamp = true;
@@ -361,17 +369,17 @@ void ChangeMap::cleanupStage3()
                   // There's a chance that the next event is a fix at the same tick as the
                   // start of the current ramp. If so, get the next event, which is assured
                   // to be a different (larger) tick
-                  if (nextChangeEventIter != end() && nextChangeEventIter.key() == tick)
+                  if (nextChangeEventIter != this->end() && nextChangeEventIter.key() == tick)
                         nextChangeEventIter++;
 
                   // If this is the last event, there is no change
-                  if (nextChangeEventIter == end()) {
+                  if (nextChangeEventIter == this->end()) {
                         event.cachedEndVal = event.cachedStartVal;
                         }
                   else {
                         // Search for a fixed event at the next event point
                         bool foundFix = false;
-                        for (auto& nextChangeEvent : values(nextChangeEventIter.key())) {
+                        for (auto& nextChangeEvent : this->values(nextChangeEventIter.key())) {
                               if (nextChangeEvent.type == ChangeEventType::FIX) {
                                     event.cachedEndVal = nextChangeEvent.value;
                                     foundFix = true;
@@ -405,7 +413,8 @@ void ChangeMap::cleanupStage3()
 //   cleanup
 //---------------------------------------------------------
 
-void ChangeMap::cleanup()
+template <class EventT>
+void ChangeMap<EventT>::cleanup()
       {
       if (cleanedUp)
             return;
@@ -427,7 +436,8 @@ void ChangeMap::cleanup()
 ///   returns a list of changes in a range, and their start and end points
 //---------------------------------------------------------
 
-std::vector<std::pair<Fraction, Fraction>> ChangeMap::changesInRange(Fraction stick, Fraction etick)
+template <class EventT>
+std::vector<std::pair<Fraction, Fraction>> ChangeMap<EventT>::changesInRange(Fraction stick, Fraction etick)
       {
       if (!cleanedUp)
             cleanup();
@@ -436,7 +446,7 @@ std::vector<std::pair<Fraction, Fraction>> ChangeMap::changesInRange(Fraction st
 
       // Force a new event on every noteon, in case the velocity has changed
       tempChanges.push_back(std::make_pair(stick, stick));
-      for (auto iter = lowerBound(stick); iter != end(); iter++) {
+      for (auto iter = this->lowerBound(stick); iter != this->end(); iter++) {
             Fraction tick = iter.key();
             if (tick > etick)
                   break;
@@ -452,8 +462,8 @@ std::vector<std::pair<Fraction, Fraction>> ChangeMap::changesInRange(Fraction st
             }
 
       // And also go back one and try to find ramp coming into this range
-      auto iter = lowerBound(stick);
-      if (iter != begin()) {
+      auto iter = this->lowerBound(stick);
+      if (iter != this->begin()) {
             iter--;
             auto& event = iter.value();
             if (event.type == ChangeEventType::RAMP) {
@@ -470,7 +480,8 @@ std::vector<std::pair<Fraction, Fraction>> ChangeMap::changesInRange(Fraction st
 //   changeMethodTable
 //---------------------------------------------------------
 
-const std::vector<ChangeMap::ChangeMethodItem> ChangeMap::changeMethodTable {
+template <class EventT>
+const std::vector<typename ChangeMap<EventT>::ChangeMethodItem> ChangeMap<EventT>::changeMethodTable {
       { ChangeMethod::NORMAL,           "normal"      },
       { ChangeMethod::EASE_IN,          "ease-in"     },
       { ChangeMethod::EASE_OUT,         "ease-out"    },
@@ -482,7 +493,8 @@ const std::vector<ChangeMap::ChangeMethodItem> ChangeMap::changeMethodTable {
 //   changeMethodToName
 //---------------------------------------------------------
 
-QString ChangeMap::changeMethodToName(ChangeMethod method)
+template <class EventT>
+QString ChangeMap<EventT>::changeMethodToName(ChangeMethod method)
       {
       for (auto i : ChangeMap::changeMethodTable) {
             if (i.method == method)
@@ -496,7 +508,8 @@ QString ChangeMap::changeMethodToName(ChangeMethod method)
 //   nameToChangeMethod
 //---------------------------------------------------------
 
-ChangeMethod ChangeMap::nameToChangeMethod(QString name)
+template <class EventT>
+ChangeMethod ChangeMap<EventT>::nameToChangeMethod(QString name)
       {
       for (auto i : ChangeMap::changeMethodTable) {
             if (i.name == name)
@@ -509,10 +522,11 @@ ChangeMethod ChangeMap::nameToChangeMethod(QString name)
 //   dump
 //---------------------------------------------------------
 
-void ChangeMap::dump()
+template <class EventT>
+void ChangeMap<EventT>::dump()
       {
       qDebug("\n\n=== ChangeMap: dump ===");
-      for (auto i = begin(); i != end(); i++) {
+      for (auto i = this->begin(); i != this->end(); i++) {
             Fraction tick = i.key();
             auto& event = i.value();
             if (event.type == ChangeEventType::FIX) {
@@ -542,6 +556,13 @@ bool ChangeEvent::operator==(const ChangeEvent& event) const
             direction == event.direction
       );
       }
+
+// We need to explicitally define the allowed types for ChangeMap to
+// allow linking to take place, see:
+// http://www.cplusplus.com/articles/1C75fSEw/
+class TempoEvent;
+class ChangeMap<ChangeEvent>;
+class ChangeMap<TempoEvent>;
 
 }
 

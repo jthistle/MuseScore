@@ -692,7 +692,7 @@ void Hairpin::read(XmlReader& e)
             else if (tag == "singleNoteDynamics")
                   _singleNoteDynamics = e.readBool();
             else if (tag == "veloChangeMethod")
-                  _veloChangeMethod = ChangeMap::nameToChangeMethod(e.readElementText());
+                  _veloChangeMethod = ChangeMap<ChangeEvent>::nameToChangeMethod(e.readElementText());
             else if (!TextLineBase::readProperties(e))
                   e.unknown();
             }
