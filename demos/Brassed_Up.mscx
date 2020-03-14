@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <museScore version="3.01">
-  <programVersion>3.1.0</programVersion>
+  <programVersion>3.5.0</programVersion>
   <programRevision>3543170</programRevision>
   <Score>
     <LayerTag id="0" tag="default"></LayerTag>
@@ -11,17 +11,18 @@
         <val id="1">NoEffect</val>
         <val id="2">0.1</val>
         <val id="3">440</val>
-        <val id="4">1</val>
+        <val id="4">3</val>
         <val id="5">1</val>
         </master>
       <Fluid>
-        <val id="0">MuseScore_General_Lite.sf2</val>
+        <val id="0">Aftertouch.sf3</val>
+        <val id="0">MuseScore_General.sf3</val>
         </Fluid>
       <Zerberus>
         </Zerberus>
       <Zita1>
         <val id="0">0.25</val>
-        <val id="1">0.462756</val>
+        <val id="1">0.112756</val>
         <val id="2">0.161809</val>
         <val id="3">0.333333</val>
         <val id="4">0.25</val>
@@ -193,11 +194,13 @@
           <gateTime>100</gateTime>
           </Articulation>
         <Channel name="open">
+          <controller ctrl="0" value="0"/>
           <controller ctrl="32" value="17"/>
           <program value="56"/>
           <synti>Fluid</synti>
           </Channel>
         <Channel name="mute">
+          <controller ctrl="0" value="0"/>
           <controller ctrl="32" value="17"/>
           <program value="59"/>
           <synti>Fluid</synti>
@@ -263,6 +266,7 @@
           <gateTime>100</gateTime>
           </Articulation>
         <Channel>
+          <controller ctrl="0" value="0"/>
           <controller ctrl="32" value="17"/>
           <program value="57"/>
           <synti>Fluid</synti>
@@ -328,6 +332,7 @@
           <gateTime>100</gateTime>
           </Articulation>
         <Channel>
+          <controller ctrl="0" value="0"/>
           <controller ctrl="32" value="17"/>
           <program value="57"/>
           <synti>Fluid</synti>
@@ -393,6 +398,7 @@
           <gateTime>100</gateTime>
           </Articulation>
         <Channel>
+          <controller ctrl="0" value="0"/>
           <controller ctrl="32" value="17"/>
           <program value="58"/>
           <synti>Fluid</synti>

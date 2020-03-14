@@ -466,6 +466,8 @@ void SynthControl::updateGui()
                   continue;
             s->gui()->synthesizerChanged();
             }
+
+      checkDynamicsMethod();
       }
 
 //---------------------------------------------------------
@@ -499,6 +501,22 @@ void SynthControl::setDirty()
       saveButton->setEnabled(true);
       storeButton->setEnabled(true);
       recallButton->setEnabled(true);
+      checkDynamicsMethod();
+      }
+
+//---------------------------------------------------------
+//   checkDynamicsMethod
+//---------------------------------------------------------
+
+void SynthControl::checkDynamicsMethod()
+      {
+      if (dynamicsMethodList->currentIndex() == 3) {
+            // If polyphonic aftertouch, disable CC list
+            ccToUseList->setEnabled(false);
+            }
+      else {
+            ccToUseList->setEnabled(true);
+            }
       }
 
 //---------------------------------------------------------

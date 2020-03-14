@@ -33,7 +33,8 @@ class SynthesizerState;
 enum class DynamicsRenderMethod : signed char {
       FIXED_MAX,
       SEG_START,
-      SIMPLE
+      SIMPLE,
+      POLY_AFTERTOUCH,
       };
 
 //---------------------------------------------------------

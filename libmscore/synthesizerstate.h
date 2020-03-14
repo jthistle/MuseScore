@@ -82,7 +82,7 @@ static SynthesizerState defaultState = {
             { 0, "Zita1" },
             { 2, "0.1"   },
             { 3, "440"   },
-            { 4, "1"     },
+            { 4, "3"     },
             { 5, "1"     }
             },
             },

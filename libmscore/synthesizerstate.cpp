@@ -42,15 +42,24 @@ void SynthesizerState::write(XmlWriter& xml, bool force /* = false */) const
 
 void SynthesizerState::read(XmlReader& e)
       {
+      bool isDefaultSoundfont = false;
       std::list<SynthesizerGroup> tempGroups;
       while (e.readNextStartElement()) {
             SynthesizerGroup group;
             group.setName(e.name().toString());
+            bool isFluid = group.name() == "Fluid";
 
             while (e.readNextStartElement()) {
                   if (e.name() == "val") {
+                        QString txt = e.readElementText();
+                        // compat for pre-poly aftertouch
+                        if (isFluid) {
+                              isDefaultSoundfont = txt == "MuseScore_General.sf3";
+                              isFluid = false;  // prevent more checks in any case
+                              }
+
                         int id = e.intAttribute("id");
-                        group.push_back(IdValue(id, e.readElementText()));
+                        group.push_back(IdValue(id, txt));
                         }
                   else
                         e.unknown();
@@ -59,6 +68,18 @@ void SynthesizerState::read(XmlReader& e)
             }
 
       if (!tempGroups.empty()) {
+            if (isDefaultSoundfont) {
+                  for (SynthesizerGroup& g : tempGroups) {
+                        if (g.name() == "master") {
+                              for (IdValue& v : g) {
+                                    if (v.id == 4) {
+                                          v.data = "3";     // set to poly aftertouch
+                                          }
+                                    }
+                              }
+                        }
+                  }
+
             // Replace any previously set state if we have read a new state
             swap(tempGroups);
             setIsDefault(false);

@@ -320,7 +320,6 @@ static void collectNote(EventMap* events, int channel, const Note* note, qreal v
                         case DynamicsRenderMethod::FIXED_MAX:
                               velo = 127;
                               break;
-                        case DynamicsRenderMethod::SEG_START:
                         default:
                               velo = staff->velocities().val(nonUnwoundTick);
                               break;
@@ -350,11 +349,19 @@ static void collectNote(EventMap* events, int channel, const Note* note, qreal v
                               continue;
                         lastVal = velo;
 
-                        // NOTE:JT if we ever want to use poly aftertouch instead of CC, this is where we want to
-                        // be using it. Instead of ME_CONTROLLER, use ME_POLYAFTER (but duplicate for each note in chord)
-                        NPlayEvent event = NPlayEvent(ME_CONTROLLER, channel, config.controller, qBound(1, int(velo * velocityMultiplier), 127));
-                        event.setOriginatingStaff(staffIdx);
-                        events->insert(std::make_pair(t + tickOffset, event));
+                        if (config.method == DynamicsRenderMethod::POLY_AFTERTOUCH) {
+                              // TODO: apply note custom velocities, in future per-voice dynamics?
+                              for (Note* n : chord->notes()) {
+                                    NPlayEvent event = NPlayEvent(ME_POLYAFTER, channel, n->ppitch(), qBound(1, int(velo * velocityMultiplier), 127));
+                                    event.setOriginatingStaff(staffIdx);
+                                    events->insert(std::make_pair(t + tickOffset, event));
+                                    }
+                              }
+                        else {
+                              NPlayEvent event = NPlayEvent(ME_CONTROLLER, channel, config.controller, qBound(1, int(velo * velocityMultiplier), 127));
+                              event.setOriginatingStaff(staffIdx);
+                              events->insert(std::make_pair(t + tickOffset, event));
+                              }
                         }
                   }
             }
@@ -525,73 +532,15 @@ static int getControllerFromCC(int cc)
       }
 
 //---------------------------------------------------------
-//   collectMeasureEventsSimple
-//    the original, velocity-only method of collecting events.
+//   collectMeasureEvents
+///   Method is one of:
+///         SIMPLE - don't use SND. Just normal midi events with a velocity.
+///         FIXED_MAX - default: velocity is fixed at 127
+///         SEG_START - note-on velocity is the same as the start velocity of the seg
+///         POLY_AFTERTOUCH - same as SEG_START, but using poly aftertouch instead of cc events
 //---------------------------------------------------------
 
-static void collectMeasureEventsSimple(EventMap* events, Measure* m, Staff* staff, int tickOffset)
-      {
-      int firstStaffIdx = staff->idx();
-      int nextStaffIdx  = firstStaffIdx + 1;
-
-      SegmentType st = SegmentType::ChordRest;
-      int strack = firstStaffIdx * VOICES;
-      int etrack = nextStaffIdx * VOICES;
-
-      for (Segment* seg = m->first(st); seg; seg = seg->next(st)) {
-            int tick = seg->tick().ticks();
-            for (int track = strack; track < etrack; ++track) {
-                  // skip linked staves, except primary
-                  if (!m->score()->staff(track / VOICES)->primaryStaff()) {
-                        track += VOICES-1;
-                        continue;
-                        }
-                  Element* cr = seg->element(track);
-                  if (cr == 0 || cr->type() != ElementType::CHORD)
-                        continue;
-
-                  Chord* chord = toChord(cr);
-                  Staff* st1   = chord->staff();
-                  Instrument* instr = chord->part()->instrument(Fraction::fromTicks(tick));
-                  int channel = instr->channel(chord->upNote()->subchannel())->channel();
-                  events->registerChannel(channel);
-
-                  qreal veloMultiplier = 1;
-                  for (Articulation* a : chord->articulations()) {
-                        if (a->playArticulation()) {
-                              veloMultiplier *= instr->getVelocityMultiplier(a->articulationName());
-                              }
-                        }
-
-                  SndConfig config;       // dummy
-
-                  if (!graceNotesMerged(chord))
-                      for (Chord* c : chord->graceNotesBefore())
-                          for (const Note* note : c->notes())
-                              collectNote(events, channel, note, veloMultiplier, tickOffset, st1, config);
-
-                  for (const Note* note : chord->notes())
-                        collectNote(events, channel, note, veloMultiplier, tickOffset, st1, config);
-
-                  if (!graceNotesMerged(chord))
-                      for (Chord* c : chord->graceNotesAfter())
-                          for (const Note* note : c->notes())
-                              collectNote(events, channel, note, veloMultiplier, tickOffset, st1, config);
-                 }
-            }
-      }
-
-//---------------------------------------------------------
-//   collectMeasureEventsDefault
-//    this uses only CC events to control note velocity, and sets the
-//    note-on velocity to always be 127 (max). This is the method that allows
-//    single note dynamics, but only works if the soundfont supports it.
-//    Method is one of:
-//          FIXED_MAX - default: velocity is fixed at 127
-//          SEG_START - note-on velocity is the same as the start velocity of the seg
-//---------------------------------------------------------
-
-static void collectMeasureEventsDefault(EventMap* events, Measure* m, Staff* staff, int tickOffset, DynamicsRenderMethod method, int cc)
+static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int tickOffset, DynamicsRenderMethod method, int cc)
       {
       int controller = getControllerFromCC(cc);
 
@@ -617,10 +566,7 @@ static void collectMeasureEventsDefault(EventMap* events, Measure* m, Staff* sta
                         }
 
                   Element* cr = seg->element(track);
-                  if (!cr)
-                        continue;
-
-                  if (!cr->isChord())
+                  if (!cr || !cr->isChord())
                         continue;
 
                   Chord* chord = toChord(cr);
@@ -639,8 +585,12 @@ static void collectMeasureEventsDefault(EventMap* events, Measure* m, Staff* sta
                               }
                         }
 
-                  bool useSND = instr->singleNoteDynamics();
-                  SndConfig config = SndConfig(useSND, controller, method);
+                  // This can be left as a dummy if we're not using SND
+                  SndConfig config;
+                  if (method != DynamicsRenderMethod::SIMPLE) {
+                        bool useSND = instr->singleNoteDynamics();
+                        config = SndConfig(useSND, controller, method);
+                        }
 
                   //
                   // Add normal note events
@@ -659,27 +609,6 @@ static void collectMeasureEventsDefault(EventMap* events, Measure* m, Staff* sta
                               for (const Note* note : c->notes())
                                     collectNote(events, channel, note, veloMultiplier, tickOffset, st1, config);
                   }
-            }
-      }
-
-//---------------------------------------------------------
-//   collectMeasureEvents
-//    redirects to the correct function based on the passed method
-//---------------------------------------------------------
-
-static void collectMeasureEvents(EventMap* events, Measure* m, Staff* staff, int tickOffset, DynamicsRenderMethod method, int cc)
-      {
-      switch (method) {
-            case DynamicsRenderMethod::SIMPLE:
-                  collectMeasureEventsSimple(events, m, staff, tickOffset);
-                  break;
-            case DynamicsRenderMethod::SEG_START:
-            case DynamicsRenderMethod::FIXED_MAX:
-                  collectMeasureEventsDefault(events, m, staff, tickOffset, method, cc);
-                  break;
-            default:
-                  qWarning("Unrecognized dynamics method: %d", int(method));
-                  break;
             }
 
       collectProgramChanges(events, m, staff, tickOffset);
@@ -2127,6 +2056,9 @@ void MidiRenderer::renderChunk(const Chunk& chunk, EventMap* events, const Synth
                   break;
             case 2:
                   renderMethod = DynamicsRenderMethod::FIXED_MAX;
+                  break;
+            case 3:
+                  renderMethod = DynamicsRenderMethod::POLY_AFTERTOUCH;
                   break;
             default:
                   qWarning("Unrecognized dynamics method: %d", method);

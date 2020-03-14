@@ -315,7 +315,7 @@
        <item row="0" column="1">
         <widget class="QComboBox" name="dynamicsMethodList">
          <property name="currentIndex">
-          <number>1</number>
+          <number>3</number>
          </property>
          <item>
           <property name="text">
@@ -324,12 +324,17 @@
          </item>
          <item>
           <property name="text">
-           <string>Default (single-note dynamics and velocity)</string>
+           <string>CC events and velocity</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>CC events only (constant velocity)</string>
+           <string>CC events only</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Default (polyphonic aftertouch)</string>
           </property>
          </item>
         </widget>

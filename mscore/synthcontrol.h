@@ -47,6 +47,7 @@ class SynthControl : public QWidget, Ui::SynthControl {
       void updateExpressivePatches();
       void updateMixer();
       void setAllUserBankController(bool val);
+      void checkDynamicsMethod();
 
    private slots:
       void gainChanged(double, int);
